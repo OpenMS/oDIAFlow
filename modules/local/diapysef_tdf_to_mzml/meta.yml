@@ -1,0 +1,36 @@
+name: diapysef_tdf_to_mzml
+description: A module for converting TDF files to mzML format using diapysef
+keywords:
+  - diaPASEF
+  - TDF
+  - mzML
+tools:
+  - diapysef:
+      description: |
+        diapysef is a Python package for processing diaPASEF data and converting TDF files to mzML format.
+      homepage: https://github.com/Roestlab/dia-pasef/tree/master/src/diapysef
+      documentation: https://github.com/Roestlab/dia-pasef/tree/master/src/diapysef
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+  - rawfile:
+      type: directory
+      description: Bruker .d directory containing TDF/TDF_BIN data.
+      pattern: "*.d"
+output:
+  - mzmls_converted:
+      type: file
+      description: Converted mzML file(s) generated from the input .d directory.
+      pattern: "*.mzML"
+  - versions:
+      type: file
+      description: Software version manifest.
+      pattern: "versions.yml"
+  - log:
+      type: file
+      description: Conversion log file captured from diapysef.
+      pattern: "*_conversion.log"
+authors:
+  - "@singjc"
