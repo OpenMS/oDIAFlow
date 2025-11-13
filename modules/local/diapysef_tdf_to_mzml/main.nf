@@ -8,23 +8,23 @@ process DIAPYSEF_TDF_TO_MZML {
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
         'ghcr.io/openswath/openswath:v0.3.1' }"
 
-    stageInMode {
-        if (task.attempt == 1) {
-            if (executor == "awsbatch") {
-                'symlink'
-            } else {
-                'link'
-            }
-        } else if (task.attempt == 2) {
-            if (executor == "awsbatch") {
-                'copy'
-            } else {
-                'symlink'
-            }
-        } else {
-            'copy'
-        }
-    }
+    // stageInMode {
+    //     if (task.attempt == 1) {
+    //         if (executor == "awsbatch") {
+    //             'symlink'
+    //         } else {
+    //             'link'
+    //         }
+    //     } else if (task.attempt == 2) {
+    //         if (executor == "awsbatch") {
+    //             'copy'
+    //         } else {
+    //             'symlink'
+    //         }
+    //     } else {
+    //         'copy'
+    //     }
+    // }
 
     input:
     // meta should at least have: meta.mzml_id
@@ -41,10 +41,13 @@ process DIAPYSEF_TDF_TO_MZML {
 
     """
     # diapysef requires Bruker SDK libs inside the container (libtimsdata)
+    # We call the conversion help once to check and download the Bruker SDK
+    diapysef converttdftomzml --help || true
+
     # Convert TDF (.d folder) -> mzML in current working directory
     diapysef converttdftomzml \\
         --in=${rawfile} \\
-        --out=. \\
+        --out=${prefix}.mzML \\
         ${args} \\
         2>&1 | tee ${prefix}_conversion.log
 
