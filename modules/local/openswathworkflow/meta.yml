@@ -1,0 +1,51 @@
+name: openswathworkflow
+description: A module that runs OpenSwathWorkflow to produce OSW and chromatogram mzML outputs from DIA mzML inputs.
+keywords:
+  - OpenSWATH
+  - DIA
+  - mzML
+  - pqp
+tools:
+  - OpenSwathWorkflow:
+      description: |
+        OpenSwathWorkflow from the OpenSWATH project for DIA data processing, scoring and chromatogram extraction.
+      homepage: https://github.com/OpenMS/OpenMS
+      documentation: https://openswath.org
+input:
+  - dia_mzml:
+      type: file
+      description: Input DIA mzML file containing the acquired spectra.
+      pattern: "*.mzML"
+  - pqp:
+      type: file
+      description: PQP (PeptideQueryParameter) assay/library file used by OpenSwathWorkflow.
+      pattern: "*.pqp"
+  - irt_traml:
+      type: file
+      description: Optional iRT TraML file for retention time alignment.
+      optional: true
+      pattern: "*.TraML"
+  - swath_windows:
+      type: file
+      description: Optional swath window definition file.
+      optional: true
+      pattern: "*windows*"
+output:
+  - osw:
+      type: file
+      description: OpenSWATH OSW results file.
+      pattern: "*.osw"
+  - chrom_mzml:
+      type: file
+      description: Extracted chromatogram mzML file(s) produced by OpenSwathWorkflow.
+      pattern: "*.chrom.mzML"
+  - versions:
+      type: file
+      description: Software version manifest produced by the process.
+      pattern: "versions.yml"
+  - log:
+      type: file
+      description: Log file captured from OpenSwathWorkflow run.
+      pattern: "*_openswath.log"
+authors:
+  - "@singjc"
