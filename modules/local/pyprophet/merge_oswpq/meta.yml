@@ -1,0 +1,28 @@
+name: pyprophet_merge_oswpq
+description: Merges multiple .oswpq directories into a unified .oswpqd structure for PyProphet analysis
+keywords:
+  - PyProphet
+  - Proteomics
+  - OSW
+  - Parquet
+  - Merge
+tools:
+  - PyProphet:
+      description: |
+        PyProphet is a semi-supervised learning and statistical validation tool for DIA proteomics data.
+        This module merges individual .oswpq directories (from pyprophet export parquet) into a single
+        .oswpqd directory structure containing all runs for downstream scoring and inference.
+      homepage: https://github.com/PyProphet/pyprophet
+      documentation: https://pyprophet.readthedocs.io/
+input:
+  - oswpq_dirs:
+      type: directory
+      description: Multiple .oswpq directories, each containing precursors_features.parquet and transition_features.parquet from individual runs.
+      pattern: "*.oswpq"
+output:
+  - merged_oswpqd:
+      type: directory
+      description: Merged .oswpqd directory containing all input .oswpq directories, ready for PyProphet scoring.
+      pattern: "all_runs.oswpqd"
+authors:
+  - "@singjc"
