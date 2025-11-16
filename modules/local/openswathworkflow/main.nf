@@ -37,7 +37,11 @@ process OPENSWATHWORKFLOW {
     -in ${dia_mzml} \\
     -tr ${pqp} \\
     -auto_irt true \\
-    -min_rsq 0.0 \\
+    -Calibration:irt_bins ${params.osw.linear_irt_bins} \\
+    -Calibration:irt_peptides_per_bin ${params.osw.linear_irt_peptides_per_bin} \\
+    -Calibration:irt_bins_nonlinear ${params.osw.nonlinear_irt_bins} \\
+    -Calibration:irt_peptides_per_bin_nonlinear ${params.osw.nonlinear_irt_peptides_per_bin} \\
+    -min_rsq ${params.osw.min_rsq} \\
     -min_upper_edge_dist 1 \\
     -estimate_extraction_windows all \\
     ${irtFlag} \\
@@ -56,7 +60,9 @@ process OPENSWATHWORKFLOW {
     -Calibration:MassIMCorrection:debug_mz_file ${dia_mzml.baseName}_debug_calibration_mz.txt \\
     -mz_correction_function quadratic_regression_delta_ppm \\
     -force \\
+    -batchSize ${params.osw.batch_size} \\
     -threads ${task.cpus} \\
+    -debug ${params.osw.debug} \\
     $args \\
   2>&1 | tee ${dia_mzml.baseName}_openswath.log
 
