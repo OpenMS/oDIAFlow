@@ -1,0 +1,36 @@
+name: easypqp_library
+description: A module that runs EasyPQP Library to create a PQP target assay library from SAGE results and matched fragments
+keywords:
+  - OpenSWATH
+  - DIA
+  - pqp
+tools:
+  - EasyPQP:
+      description: |
+        EasyPQP is a tool for generating Peptide Query Parameter (PQP) files for DIA data analysis.
+      homepage: https://openswath.org
+      documentation: https://github.com/grosenberger/easypqp
+input:
+  - psmpkls:
+      type: file
+      description: EasyPQP peptide-spectrum match pickle files containing PSM information for library generation.
+      pattern: "*.psmpkl"
+  - peakpkls:
+      type: file
+      description: EasyPQP spectra peak pickle files containing fragment ion information for library generation.
+      pattern: "*.peakpkl"
+output:
+  - library_tsv:
+      type: file
+      description: EasyPQP target assay library in TSV format generated from the provided PSM and peak pickle files.
+      pattern: "easypqp_library.tsv"
+  - versions:
+      type: file
+      description: Software version manifest produced by the process.
+      pattern: "versions.yml"
+  - log:
+      type: file
+      description: Log file captured from EasyPQP Library run.
+      pattern: "easypqp_library.log"
+authors:
+  - "@singjc"

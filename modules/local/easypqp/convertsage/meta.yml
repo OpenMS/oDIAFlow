@@ -1,0 +1,40 @@
+name: easypqp_convertsage
+description: A module that runs EasyPQP ConvertSage to convert SAGE results and matched fragments to EasyPQP peak and psm pickles
+keywords:
+  - OpenSWATH
+  - DIA
+  - pqp
+tools:
+  - EasyPQP:
+      description: |
+        EasyPQP is a tool for generating Peptide Query Parameter (PQP) files for DIA data analysis.
+      homepage: https://openswath.org
+      documentation: https://github.com/grosenberger/easypqp
+input:
+  - sage_results:
+      type: file
+      description: SAGE results file containing peptide-spectrum matches (PSMs) from SAGE analysis. Accepts TSV or Parquet format.
+      pattern: "*.{tsv,parquet}"
+  - sage_matched_fragments:
+      type: file
+      description: SAGE matched fragments file containing fragment ion information for the PSMs. Accepts TSV or Parquet format.
+      pattern: "*.{tsv,parquet}"
+output:
+  - psmkpkl:
+      type: file
+      description: EasyPQP peptide-spectrum match pickle file generated from the SAGE results.
+      pattern: "*.psmpkl"
+  - peakpkl:
+      type: file
+      description: EasyPQP spectra peak pickle file generated from the SAGE matched fragments.
+      pattern: "*.peakpkl"
+  - versions:
+      type: file
+      description: Software version manifest produced by the process.
+      pattern: "versions.yml"
+  - log:
+      type: file
+      description: Log file captured from EasyPQP ConvertSage run.
+      pattern: "easypqp_convertsage.log"
+authors:
+  - "@singjc"
