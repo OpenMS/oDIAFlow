@@ -1,0 +1,42 @@
+name: sage_search
+description: A module that runs Sage proteomics database search engine
+keywords:
+  - Sage
+  - Proteomics
+tools:
+  - Sage:
+      description: |
+        Sage is a proteomics database search engine, that transforms raw mass spectra from proteomics experiments into peptide identifications via database searching & spectral matching.
+      homepage: https://sage-docs.vercel.app/docs
+      documentation: https://sage-docs.vercel.app/docs
+input:
+  - fasta:
+      type: file
+      description: FASTA file containing the protein sequences to search against.
+      pattern: "*.fasta"
+  - dda_mzml: 
+      type: file
+      description: DDA mzML files containing the mass spectra to be searched.
+      pattern: "*.mzML"
+  - output_directory:
+      type: directory
+      description: Output directory where Sage results will be stored.
+output:
+  - results:
+      type: file
+      description: Sage results file containing peptide-spectrum matches.
+      pattern: "*.sage_results.{tsv,parquet}"
+  - matched_fragments:
+      type: file
+      description: SAGE matched fragments file containing fragment ion information for the PSMs.
+      pattern: "*.sage_matched_fragments.{tsv,parquet}"
+  - versions:
+      type: file
+      description: Software version manifest produced by the process.
+      pattern: "versions.yml"
+  - log:
+      type: file
+      description: Log file captured from EasyPQP ConvertSage run.
+      pattern: "sage_search.log"
+authors:
+  - "@singjc"
