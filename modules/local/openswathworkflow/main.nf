@@ -11,6 +11,7 @@ process OPENSWATHWORKFLOW {
   path dia_mzml
   path pqp
   path irt_traml
+  path irt_nonlinear_traml
   path swath_windows
 
   output:
@@ -24,8 +25,9 @@ process OPENSWATHWORKFLOW {
   script:
   def args = task.ext.args ?: ''
   def cacheFlags = params.osw.cache_in_mem ? "-readOptions cacheWorkingInMemory -tempDirectory \$PWD/tmp_${dia_mzml.baseName}" : ""
-  def pasefFlags = params.osw.pasef ? "-pasef -ion_mobility_window ${params.osw.im_window} -Scoring:Scores:use_ion_mobility_scores true" : ""
+  def pasefFlags = params.osw.pasef ? "-pasef -ion_mobility_window ${params.osw.im_window} -im_extraction_window_ms1 ${params.osw.im_extraction_window_ms1} - irt_im_extraction_window ${params.osw.irt_im_extraction_window} -Calibration:MassIMCorrection:debug_im_file ${dia_mzml.baseName}_debug_calibration_im.txt -Scoring:Scores:use_ion_mobility_scores true -Scoring:add_up_spectra 3 -Scoring:spectrum_merge_method_type dynamic -Scoring:merge_spectra_by_peak_width_fraction 0.20 -Scoring:apply_im_peak_picking " : ""
   def irtFlag    = irt_traml ? "-tr_irt ${irt_traml}" : ""
+  def irtFlagNonlinear = irt_nonlinear_traml ? "-tr_irt_nonlinear ${irt_nonlinear_traml}" : ""
   def swathFlag  = swath_windows ? "-swath_windows_file ${swath_windows}" : ""
 
   """
@@ -36,13 +38,10 @@ process OPENSWATHWORKFLOW {
     -tr ${pqp} \\
     -auto_irt true \\
     -min_rsq 0.0 \\
-    -pasef \\
     -min_upper_edge_dist 1 \\
     -estimate_extraction_windows all \\
-    -ion_mobility_window 0.06 \\
-    -im_extraction_window_ms1 0.06 \\
-    -irt_im_extraction_window 0.1 \\
     ${irtFlag} \\
+    ${irtFlagNonlinear} \\
     ${swathFlag} \\
     ${pasefFlags} \\
     ${cacheFlags} \\
@@ -50,11 +49,12 @@ process OPENSWATHWORKFLOW {
     -out_chrom ${dia_mzml.baseName}.sqMass \\
     -Debugging:irt_mzml ${dia_mzml.baseName}_debug_calibration_irt_chrom.mzML \\
     -Debugging:irt_trafo ${dia_mzml.baseName}_debug_calibration_irt.trafoXML \\
-    -Calibration:MassIMCorrection:debug_mz_file ${dia_mzml.baseName}_debug_calibration_mz.txt \\
-    -Calibration:MassIMCorrection:debug_im_file ${dia_mzml.baseName}_debug_calibration_im.txt \\
     -Calibration:RTNormalization:alignmentMethod lowess \\
     -Calibration:RTNormalization:lowess:auto_span true \\
-    -Calibration:MassIMCorrection:mz_correction_function quadratic_regression_delta_ppm \\
+    -Calibration:RTNormalization:estimateBestPeptides \\
+    -Calibration:RTNormalization:outlierMethod iter_residual \\
+    -Calibration:MassIMCorrection:debug_mz_file ${dia_mzml.baseName}_debug_calibration_mz.txt \\
+    -mz_correction_function quadratic_regression_delta_ppm \\
     -force \\
     -threads ${task.cpus} \\
     $args \\
