@@ -1,0 +1,33 @@
+name: pyprophet_osw
+description: Subworkflow for performing a full PyProphet analysis on OpenSwathWorkflow OSW files
+keywords:
+  - OpenSWATH
+  - DIA
+  - PyProphet
+tools:
+  - PyProphet:
+      description: |
+        PyProphet is a statistical tool for semi-supervised scoring and FDR estimation of peptide/protein identifications from DIA data processed with OpenSWATH.
+      homepage: https://openswath.org
+      documentation: http://openswath.org/en/latest/docs/pyprophet.html
+components:
+  - pyprophet_merge
+  - pyprophet_peakgroup_scoring
+  - pyprophet_infer_peptide
+  - pyprophet_infer_protein
+  - pyprophet_export_results_report
+  - pyprophet_export_tsv
+input:
+  - ch_input:
+    type: file
+    description: Channel containing OpenSwathWorkflow OSW files to be processed by PyProphet.
+output:
+  - ch_final_tsv:
+      type: file
+      description: Channel containing the final exported TSV results from PyProphet after scoring and inference.
+  - versions:
+      type: file
+      description: Software version manifest produced by the process.
+      pattern: "versions.yml"
+authors:
+  - "@singjc"
