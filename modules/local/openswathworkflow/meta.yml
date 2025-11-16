@@ -9,8 +9,8 @@ tools:
   - OpenSwathWorkflow:
       description: |
         OpenSwathWorkflow from the OpenSWATH project for DIA data processing, scoring and chromatogram extraction.
-      homepage: https://github.com/OpenMS/OpenMS
-      documentation: https://openswath.org
+      homepage: https://openswath.org
+      documentation: https://abibuilder.cs.uni-tuebingen.de/archive/openms/Documentation/nightlyGHA/html/TOPP_OpenSwathWorkflow.html
 input:
   - dia_mzml:
       type: file
