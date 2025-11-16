@@ -1,0 +1,32 @@
+name: openswathdecoygenerator
+description: A module that runs OpenSwathDecoyGenerator to produce/append decoy assays to a PQP file for DIA data analysis
+keywords:
+  - OpenSWATH
+  - DIA
+  - pqp
+tools:
+  - OpenSwathDecoyGenerator:
+      description: |
+        OpenSwathDecoyGenerator from the OpenSWATH project for DIA data processing, scoring and chromatogram extraction.
+      homepage: https://openswath.org
+      documentation: https://abibuilder.cs.uni-tuebingen.de/archive/openms/Documentation/nightlyGHA/html/TOPP_OpenSwathDecoyGenerator.html
+input:
+  - target_pqp:
+      type: file
+      description: PQP (PeptideQueryParameter) assay/library file containing target assays to which decoys will be added.
+      pattern: "*.pqp"
+output:
+  - library:
+      type: file
+      description: PQP (PeptideQueryParameter) assay/library file containing target and decoy assays produced by OpenSwathDecoyGenerator.
+      pattern: "library.*"
+  - versions:
+      type: file
+      description: Software version manifest produced by the process.
+      pattern: "versions.yml"
+  - log:
+      type: file
+      description: Log file captured from OpenSwathDecoyGenerator run.
+      pattern: "openswathdecoygenerator.log"
+authors:
+  - "@singjc"

@@ -1,0 +1,32 @@
+name: openswathassaygenerator
+description: A module that runs OpenSwathAssayGenerator to create a PQP target assay library from a transition list for DIA data analysis
+keywords:
+  - OpenSWATH
+  - DIA
+  - pqp
+tools:
+  - OpenSwathAssayGenerator:
+      description: |
+        OpenSwathAssayGenerator from the OpenSWATH project for DIA data processing, scoring and chromatogram extraction.
+      homepage: https://openswath.org
+      documentation: https://abibuilder.cs.uni-tuebingen.de/archive/openms/Documentation/nightlyGHA/html/TOPP_OpenSwathAssayGenerator.html
+input:
+  - transition_list:
+      type: file
+      description: Input transition list file containing the peptide transitions to include in the assay library.
+      pattern: "*.tsv"
+output:
+  - library:
+      type: file
+      description: PQP (PeptideQueryParameter) assay/library file produced by OpenSwathAssayGenerator.
+      pattern: "library_targets.*"
+  - versions:
+      type: file
+      description: Software version manifest produced by the process.
+      pattern: "versions.yml"
+  - log:
+      type: file
+      description: Log file captured from OpenSwathAssayGenerator run.
+      pattern: "openswathassaygenerator.log"
+authors:
+  - "@singjc"
