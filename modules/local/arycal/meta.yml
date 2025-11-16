@@ -1,0 +1,39 @@
+name: arycal_xic_alignment
+description: A module that runs Arycal for XIC-based chromatogram alignment of DIA proteomics data
+keywords:
+  - Arycal
+  - Alignment
+  - XIC
+  - DIA
+  - Proteomics
+tools:
+  - Arycal:
+      description: |
+        Arycal is a chromatogram alignment tool for DIA proteomics that performs extracted ion chromatogram alignment 
+        to link peak-groups across multiple runs. 
+      homepage: https://github.com/singjc/arycal
+      documentation: https://github.com/singjc/arycal
+input:
+  - xic_files:
+      type: file
+      description: XIC data files in sqMass or parquet format containing extracted ion chromatograms.
+      pattern: "*.{sqMass,parquet}"
+  - feature_files: 
+      type: file
+      description: Feature files containing peak group information, either merged OSW or PyProphet split parquet format.
+      pattern: "*.{osw,parquet}"
+output:
+  - config:
+      type: file
+      description: JSON configuration file used for the Arycal alignment run.
+      pattern: "arycal_config.json"
+  - versions:
+      type: file
+      description: Software version manifest produced by the process.
+      pattern: "versions.yml"
+  - log:
+      type: file
+      description: Log file captured from Arycal alignment run.
+      pattern: "arycal_alignment.log"
+authors:
+  - "@singjc"
