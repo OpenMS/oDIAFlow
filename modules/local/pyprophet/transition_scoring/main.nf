@@ -8,16 +8,16 @@ process PYPROPHET_TRANSITION_SCORING {
         'ghcr.io/openswath/openswath:dev' }" // Temp use dev image which contains OpenMS develop branch for latests changes to the OpenSwathWorkflow
 
   input:
-  path merged
+  path input_data  // Can be merged.osw (SQLite) or all_runs.oswpqd (parquet directory)
 
   output:
-  path "merged.osw"
+  path "${input_data}", emit: scored
 
   // Note: PyProphet writes scores back into the same OSW by default.
   script:
   """
   pyprophet score \
-    --in ${merged} \
+    --in ${input_data} \
     --level ${params.pyprophet.transition_scoring.level} \
     --classifier ${params.pyprophet.transition_scoring.classifier} \
     --ss_num_iter ${params.pyprophet.transition_scoring.ss_num_iter} \
