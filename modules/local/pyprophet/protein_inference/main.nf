@@ -11,7 +11,10 @@ process PYPROPHET_INFER_PROTEIN {
   path scored_osw
 
   output:
-  path "merged.osw"
+  path "${scored_osw}", emit: protein_inferred
+  path "*_global_protein_report.pdf", emit: global_report, optional: true
+  path "*_experiment-wide_protein_report.pdf", emit: experiment_wide_report, optional: true
+  path "*_run-specific_protein_report.pdf", emit: run_specific_report, optional: true
 
   script:
   def args = task.ext.args ?: ''

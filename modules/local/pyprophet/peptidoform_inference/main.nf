@@ -11,7 +11,7 @@ process PYPROPHET_INFER_PEPTIDOFORM {
   path merged
 
   output:
-  path "merged.osw"
+  path "${merged}", emit: peptidoform_inferred
 
   // Note: PyProphet writes scores back into the same OSW by default.
   script:
