@@ -14,10 +14,13 @@ process PYPROPHET_EXPORT_TSV {
   path "merged.tsv"
 
   script:
+  def args = task.ext.args ?: ''
   """
   pyprophet export tsv --in ${scored_osw} --out merged.tsv \
     --max-rs-peakgroup-qvalue ${params.pyprophet_export_tsv.max_rs_peakgroup_qvalue} \
     --max-global-peptide-qvalue ${params.pyprophet_export_tsv.max_global_peptide_qvalue} \
-    --max-global-protein-qvalue ${params.pyprophet_export_tsv.max_global_protein_qvalue} 2>&1 | tee pyprophet_export_tsv.log
+    --max-global-protein-qvalue ${params.pyprophet_export_tsv.max_global_protein_qvalue} \
+    ${args} \
+    2>&1 | tee pyprophet_export_tsv.log
   """
 }

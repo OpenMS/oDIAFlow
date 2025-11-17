@@ -14,11 +14,12 @@ process PYPROPHET_INFER_PROTEIN {
   path "merged.osw"
 
   script:
+  def args = task.ext.args ?: ''
   """
-  pyprophet infer protein --in ${scored_osw} --context global 2>&1 | tee pyprophet_infer_protein.log
+  pyprophet infer protein --in ${scored_osw} --context global ${args} 2>&1 | tee pyprophet_infer_protein.log
 
-  pyprophet infer protein --in ${scored_osw} --context experiment-wide 2>&1 | tee -a pyprophet_infer_protein.log
+  pyprophet infer protein --in ${scored_osw} --context experiment-wide ${args} 2>&1 | tee -a pyprophet_infer_protein.log
 
-  pyprophet infer protein --in ${scored_osw} --context run-specific 2>&1 | tee -a pyprophet_infer_protein.log
+  pyprophet infer protein --in ${scored_osw} --context run-specific ${args} 2>&1 | tee -a pyprophet_infer_protein.log
   """
 }

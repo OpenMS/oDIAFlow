@@ -15,6 +15,7 @@ process PYPROPHET_ALIGNMENT_SCORING {
 
   // Note: PyProphet writes scores back into the same OSW by default.
   script:
+  def args = task.ext.args ?: ''
   """
   pyprophet score \
     --in ${input_data} \
@@ -25,6 +26,8 @@ process PYPROPHET_ALIGNMENT_SCORING {
     --ss_iteration_fdr ${params.pyprophet.alignment_scoring.ss_iteration_fdr} \
     --ss_main_score ${params.pyprophet.alignment_scoring.ss_main_score} \
     --xeval_num_iter ${params.pyprophet.alignment_scoring.xeval_num_iter} \
-    --threads ${task.cpus} 2>&1 | tee pyprophet_alignment_scoring.log
+    --threads ${task.cpus} \
+    ${args} \
+    2>&1 | tee pyprophet_alignment_scoring.log
   """
 }

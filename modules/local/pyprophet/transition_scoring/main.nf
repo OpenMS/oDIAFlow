@@ -15,6 +15,7 @@ process PYPROPHET_TRANSITION_SCORING {
 
   // Note: PyProphet writes scores back into the same OSW by default.
   script:
+  def args = task.ext.args ?: ''
   """
   pyprophet score \
     --in ${input_data} \
@@ -29,6 +30,8 @@ process PYPROPHET_TRANSITION_SCORING {
     --ipf_max_peakgroup_pep ${params.pyprophet.transition_scoring.ipf_max_peakgroup_pep} \
     --ipf_max_transition_isotope_overlap ${params.pyprophet.transition_scoring.ipf_max_transition_isotope_overlap} \
     --ipf_min_transition_sn ${params.pyprophet.transition_scoring.ipf_min_transition_sn} \
-    --threads ${task.cpus} 2>&1 | tee pyprophet_transition_scoring.log
+    --threads ${task.cpus} \
+    ${args} \
+    2>&1 | tee pyprophet_transition_scoring.log
   """
 }

@@ -14,11 +14,13 @@ process PYPROPHET_EXPORT_PARQUET {
   tuple val(sample_id), path("${sqlite_osw.baseName}.oswpq"), emit: oswpq
 
   script:
+  def args = task.ext.args ?: ''
   """
   pyprophet export parquet \\
     --in ${sqlite_osw} \\
     --out ${sqlite_osw.baseName}.oswpq \\
     --split_transition_data \\
+    ${args} \\
     2>&1 | tee ${sqlite_osw.baseName}_pyprophet_export_parquet.log
   """
 }

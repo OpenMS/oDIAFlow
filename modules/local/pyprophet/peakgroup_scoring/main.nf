@@ -15,6 +15,7 @@ process PYPROPHET_PEAKGROUP_SCORING {
 
   // Note: PyProphet writes scores back into the same file/directory
   script:
+  def args = task.ext.args ?: ''
   """
   pyprophet score \\
     --in ${input_data} \\
@@ -26,6 +27,7 @@ process PYPROPHET_PEAKGROUP_SCORING {
     --ss_main_score ${params.pyprophet.peakgroup_scoring.ss_main_score} \\
     --xeval_num_iter ${params.pyprophet.peakgroup_scoring.xeval_num_iter} \\
     --threads ${task.cpus} \\
+    ${args} \\
     2>&1 | tee pyprophet_peakgroup_scoring.log
   """
 }
