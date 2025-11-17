@@ -15,6 +15,7 @@ include { PYPROPHET_EXPORT_PARQUET }       from '../modules/local/pyprophet/expo
 include { PYPROPHET_MERGE_OSWPQ }          from '../modules/local/pyprophet/merge_oswpq/main.nf'
 include { PYPROPHET_MERGE }                from '../modules/local/pyprophet/merge/main.nf'
 include { ARYCAL }                         from '../modules/local/arycal/main.nf'
+include { PYPROPHET_ALIGNMENT_SCORING }    from '../modules/local/pyprophet/alignment_scoring/main.nf'
 include { PYPROPHET_OSW_FULL }             from '../subworkflows/local/pyprophet_osw/main.nf'
 include { PYPROPHET_PARQUET_FULL }         from '../subworkflows/local/pyprophet_parquet/main.nf'
 
@@ -81,11 +82,14 @@ workflow OPEN_SWATH_INSILICO_LIBRARY {
     // ARYCAL expects: xic_files (.sqMass) and merged features (osw or oswpqd)
     aligned_features = ARYCAL(xic_files, merged_features)
 
+    // Score aligned features
+    aligned_features_scored = PYPROPHET_ALIGNMENT_SCORING(aligned_features)
+
     // 7) PyProphet scoring on aligned features (score → infer peptide/protein)
     if (params.use_parquet) {
-      final_tsv = PYPROPHET_PARQUET_FULL(aligned_features, pqp_library_decoyed)
+      final_tsv = PYPROPHET_PARQUET_FULL(aligned_features_scored, pqp_library_decoyed)
     } else {
-      final_tsv = PYPROPHET_OSW_FULL(aligned_features, pqp_library_decoyed)
+      final_tsv = PYPROPHET_OSW_FULL(aligned_features_scored, pqp_library_decoyed)
     }
 
     // emit final TSV
