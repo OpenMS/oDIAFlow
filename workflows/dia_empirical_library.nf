@@ -32,9 +32,6 @@ include { PYPROPHET_PARQUET_FULL }         from '../subworkflows/local/pyprophet
 ========================================================================================
 */
 
-// Info required for completion email and summary
-def multiqc_report = []
-
 workflow OPEN_SWATH_E2E {
 
     // 1) Gather inputs
