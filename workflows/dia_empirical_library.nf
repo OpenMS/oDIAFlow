@@ -18,6 +18,7 @@ include { PYPROPHET_EXPORT_PARQUET }       from '../modules/local/pyprophet/expo
 include { PYPROPHET_MERGE_OSWPQ }          from '../modules/local/pyprophet/merge_oswpq/main.nf'
 include { PYPROPHET_MERGE }                from '../modules/local/pyprophet/merge/main.nf'
 include { ARYCAL }                         from '../modules/local/arycal/main.nf'
+include { PYPROPHET_CALIBRATION_REPORT }   from '../modules/local/pyprophet/calibration_report/main.nf'
 include { PYPROPHET_ALIGNMENT_SCORING }    from '../modules/local/pyprophet/alignment_scoring/main.nf'
 include { PYPROPHET_OSW_FULL }             from '../subworkflows/local/pyprophet_osw/main.nf'
 include { PYPROPHET_PARQUET_FULL }         from '../subworkflows/local/pyprophet_parquet/main.nf'
@@ -75,6 +76,14 @@ workflow OPEN_SWATH_E2E {
     
     // Collect XIC files (.sqMass) for alignment
     xic_files = per_run_osw.chrom_mzml.collect()
+    
+    // Collect debug calibration files for calibration report
+    all_debug_files = per_run_osw.irt_trafo
+      .mix(per_run_osw.irt_chrom, per_run_osw.debug_mz, per_run_osw.debug_im)
+      .collect()
+    
+    // Generate calibration report from debug files
+    calibration_report = PYPROPHET_CALIBRATION_REPORT(all_debug_files)
 
     // 6) Merge OSW files BEFORE alignment
     // Optional: use parquet format for PyProphet processing

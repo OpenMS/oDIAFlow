@@ -11,6 +11,7 @@ include { DIAPYSEF_TDF_TO_MZML }           from '../modules/local/diapysef_tdf_t
 include { OPENSWATHASSAYGENERATOR }        from '../modules/local/openms/openswathassaygenerator/main.nf'
 include { OPENSWATHDECOYGENERATOR }        from '../modules/local/openms/openswathdecoygenerator/main.nf'
 include { OPENSWATH_EXTRACT }              from '../modules/local/openms/openswathworkflow/main.nf'
+include { PYPROPHET_CALIBRATION_REPORT }   from '../modules/local/pyprophet/calibration_report/main.nf'
 include { PYPROPHET_EXPORT_PARQUET }       from '../modules/local/pyprophet/export_parquet/main.nf'
 include { PYPROPHET_MERGE_OSWPQ }          from '../modules/local/pyprophet/merge_oswpq/main.nf'
 include { PYPROPHET_MERGE }                from '../modules/local/pyprophet/merge/main.nf'
@@ -53,6 +54,14 @@ workflow OPEN_SWATH_INSILICO_LIBRARY {
     
     // Collect XIC files (.sqMass) for alignment
     xic_files = per_run_osw.chrom_mzml.collect()
+
+    // Collect debug calibration files for calibration report
+    all_debug_files = per_run_osw.irt_trafo
+      .mix(per_run_osw.irt_chrom, per_run_osw.debug_mz, per_run_osw.debug_im)
+      .collect()
+    
+    // Generate calibration report from debug files
+    calibration_report = PYPROPHET_CALIBRATION_REPORT(all_debug_files)
 
     // 5) Merge OSW files BEFORE alignment
     // Optional: use parquet format for PyProphet processing
