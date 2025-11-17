@@ -1,0 +1,32 @@
+name: pyprophet_merge
+description: Merges multiple OSW (SQLite) files into a single merged database for PyProphet analysis
+keywords:
+  - PyProphet
+  - Proteomics
+  - OSW
+  - SQLite
+  - Merge
+tools:
+  - PyProphet:
+      description: |
+        PyProphet is a semi-supervised learning and statistical validation tool for DIA proteomics data.
+        This module merges individual run OSW files into a single merged.osw database for downstream
+        scoring and statistical inference across all runs.
+      homepage: https://github.com/PyProphet/pyprophet
+      documentation: https://pyprophet.readthedocs.io/
+input:
+  - osw_files:
+      type: file
+      description: Multiple .osw SQLite database files from individual OpenSWATH runs.
+      pattern: "*.osw"
+  - pqp:
+      type: file
+      description: Spectral library in PQP format, used as template for the merged database schema.
+      pattern: "*.pqp"
+output:
+  - merged_osw:
+      type: file
+      description: Merged OSW SQLite database containing all runs, ready for PyProphet scoring.
+      pattern: "merged.osw"
+authors:
+  - "@singjc"
