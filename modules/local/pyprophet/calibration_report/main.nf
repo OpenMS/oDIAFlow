@@ -1,21 +1,32 @@
 process PYPROPHET_CALIBRATION_REPORT {
-  tag "pyprophet_export_calibration_report"
+  tag "pyprophet_calibration_report"
+  label 'pyprophet'
+  label 'process_low'
 
   container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
-        'ghcr.io/openswath/openswath:dev' }" // Temp use dev image which contains OpenMS develop branch for latests changes to the OpenSwathWorkflow
+        'ghcr.io/openswath/openswath:dev' }"
 
   input:
-  path working_dir 
+  path debug_files  // All debug calibration files from OpenSwathWorkflow
 
   output:
-  path "calibration_report.pdf"
-
-  when:
-  true
+  path "calibration_report.pdf", emit: report
 
   script:
   """
-  pyprophet export calibration-report --wd ${working_dir}   2>&1 | tee pyprophet_calibration_report.log
+  # Create working directory structure that pyprophet expects
+  mkdir -p calibration_data
+  
+  # Copy all debug files to the working directory
+  for file in ${debug_files}; do
+    cp "\$file" calibration_data/
+  done
+  
+  # Generate calibration report
+  pyprophet export calibration-report \\
+    --in calibration_data \\
+    --out calibration_report.pdf \\
+    2>&1 | tee pyprophet_calibration_report.log
   """
 }
