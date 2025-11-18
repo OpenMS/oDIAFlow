@@ -17,7 +17,7 @@ process PYPROPHET_MERGE {
   script:
   """
   # Merge all OSW files into a single merged.osw
-  pyprophet merge \\
+  pyprophet merge osw \\
     --out merged.osw \\
     --template ${pqp} \\
     ${osw_files} \\
