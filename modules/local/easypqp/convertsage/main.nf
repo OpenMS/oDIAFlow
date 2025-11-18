@@ -15,10 +15,12 @@ process EASYPQP_CONVERTSAGE {
   tuple val(sample_id), path("*.peakpkl"), emit: peakpkl
 
   script:
+  def args = task.ext.args ?: ''
   """
   easypqp convertsage \\
     --sage_psm ${sage_results} \\
     --sage_fragments ${sage_matched_fragments} \\
+    ${args} \\
   2>&1 | tee easypqp_convertsage_${sample_id}.log
   """
 }

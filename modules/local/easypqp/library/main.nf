@@ -15,9 +15,11 @@ process EASYPQP_LIBRARY {
   path "easypqp_library.tsv", emit: library_tsv
 
   script:
+  def args = task.ext.args ?: ''
   """
   easypqp library \\
     --out easypqp_library.tsv \\
+    ${args} \\
     ${psmpkls} \\
     ${peakpkls} \\
   2>&1 | tee easypqp_library.log
