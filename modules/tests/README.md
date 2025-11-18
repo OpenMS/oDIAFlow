@@ -19,6 +19,23 @@ nextflow run modules/tests/sage_search_test.nf \
 - `modules/tests/data/test_raw_2.mzML` - DDA mzML file 2
 - `modules/tests/data/uniprotkb_organism_id_1314_AND_reviewed_2025_11_18.fasta` - Protein database
 
+### EasyPQP Library Generation
+
+Test spectral library generation from Sage search results:
+
+```bash
+nextflow run modules/tests/easypqp_library_test.nf \
+  -c modules/tests/config/easypqp_library.config \
+  -profile docker
+```
+
+**Test workflow:** Sage search → EasyPQP convert (TSV → pickle) → EasyPQP library (combine pickles → TSV library)
+
+**Test data required:**
+- `modules/tests/data/test_raw_1.mzML` - DDA mzML file 1
+- `modules/tests/data/test_raw_2.mzML` - DDA mzML file 2
+- `modules/tests/data/uniprotkb_organism_id_1314_AND_reviewed_2025_11_18.fasta` - Protein database
+
 ### PyProphet Modules
 
 Test individual PyProphet scoring and inference modules:
@@ -85,6 +102,12 @@ Test configs are located in `modules/tests/config/`:
   - Wider mass tolerances for test data
   - Annotate matches enabled
   - 4 CPUs, 8GB RAM
+
+- **`easypqp_library.config`** - Config for EasyPQP library generation
+  - Includes Sage search configuration
+  - MUST have `annotate_matches = true` for matched_fragments
+  - Tests full workflow: Sage → convert → library
+  - 4 CPUs for Sage, 2 CPUs for EasyPQP steps
 
 - **`pyprophet_tests.config`** - Unified config for all PyProphet tests
   - Reduced iterations for faster testing
