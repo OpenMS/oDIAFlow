@@ -10,9 +10,10 @@ include { EASYPQP_LIBRARY } from '../local/easypqp/library/main.nf'
 
 workflow {
     // Input channels for DDA mzML files with sample IDs
+    // Sage can read gzipped mzML files directly
     def mzml_ch = Channel.of(
-        tuple('test_raw_1', file('modules/tests/data/test_raw_1.mzML')),
-        tuple('test_raw_2', file('modules/tests/data/test_raw_2.mzML'))
+        tuple('test_raw_1', file('modules/tests/data/test_raw_1.mzML.gz')),
+        tuple('test_raw_2', file('modules/tests/data/test_raw_2.mzML.gz'))
     )
     
     // FASTA file

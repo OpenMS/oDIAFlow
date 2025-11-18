@@ -3,7 +3,7 @@ include { OPENSWATHWORKFLOW } from '../local/openms/openswathworkflow/main.nf'
 
 workflow {
     // Separate channels for each input
-    def dia_mzml_ch = Channel.of( file('modules/tests/data/test_raw_1.mzML') )
+    def dia_mzml_ch = Channel.of( file('modules/tests/data/test_raw_1.mzML.gz') )
     def pqp_ch = Channel.of( file('modules/tests/data/test.pqp') )
     def irt_traml_ch = Channel.of( [] )
     def irt_nonlinear_traml_ch = Channel.of( [] )
