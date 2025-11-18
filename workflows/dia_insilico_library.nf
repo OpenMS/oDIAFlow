@@ -10,7 +10,7 @@
 include { DIAPYSEF_TDF_TO_MZML }           from '../modules/local/diapysef_tdf_to_mzml/main.nf'
 include { OPENSWATHASSAYGENERATOR }        from '../modules/local/openms/openswathassaygenerator/main.nf'
 include { OPENSWATHDECOYGENERATOR }        from '../modules/local/openms/openswathdecoygenerator/main.nf'
-include { OPENSWATH_EXTRACT }              from '../modules/local/openms/openswathworkflow/main.nf'
+include { OPENSWATHWORKFLOW }              from '../modules/local/openms/openswathworkflow/main.nf'
 include { PYPROPHET_CALIBRATION_REPORT }   from '../modules/local/pyprophet/calibration_report/main.nf'
 include { PYPROPHET_EXPORT_PARQUET }       from '../modules/local/pyprophet/export_parquet/main.nf'
 include { PYPROPHET_MERGE_OSWPQ }          from '../modules/local/pyprophet/merge_oswpq/main.nf'
@@ -34,14 +34,17 @@ workflow OPEN_SWATH_INSILICO_LIBRARY {
 
     // 1) Gather inputs
     Channel
-      .fromPath(params.dia_glob, checkIfExists: true)
-      .map { it -> tuple(it.baseName, it) }
-      .set { DIA_MZML }
+        .fromList(file(params.dia_glob))
+        .set { DIA_MZML }
 
     // We assume the user provides an in-silico generated transition TSV, generated from alphapepdeep, DIA-NN etc.
     transition_tsv_ch = Channel.value( file(params.transition_tsv) )
-    irt_traml_ch     = params.irt_traml ? Channel.value(file(params.irt_traml)) : Channel.empty()
-    swath_windows_ch = params.swath_windows ? Channel.value(file(params.swath_windows)) : Channel.empty()
+    
+    // Optional IRT files - use empty list [] if not provided (Nextflow will stage as empty input.N files)
+    irt_traml_ch = params.irt_traml ? Channel.value(file(params.irt_traml)) : Channel.value([])
+    irt_nonlinear_traml_ch = params.irt_nonlinear_traml ? Channel.value(file(params.irt_nonlinear_traml)) : Channel.value([])
+    
+    swath_windows_ch = params.swath_windows ? Channel.value(file(params.swath_windows)) : Channel.value([])
 
     // 2) Generate assay library from transition TSV
     pqp_library = OPENSWATHASSAYGENERATOR(transition_tsv_ch)
@@ -50,7 +53,7 @@ workflow OPEN_SWATH_INSILICO_LIBRARY {
     pqp_library_decoyed = OPENSWATHDECOYGENERATOR(pqp_library)
 
     // 4) OpenSwathWorkflow extraction per DIA mzML → per-run .osw + .sqMass (XICs)
-    per_run_osw = OPENSWATH_EXTRACT(DIA_MZML, pqp_library_decoyed, irt_traml_ch, swath_windows_ch)
+    per_run_osw = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, irt_traml_ch, irt_nonlinear_traml_ch, swath_windows_ch)
     
     // Collect XIC files (.sqMass) for alignment
     xic_files = per_run_osw.chrom_mzml.collect()
@@ -86,16 +89,18 @@ workflow OPEN_SWATH_INSILICO_LIBRARY {
 
     // 6) XIC alignment for across-run feature linking
     // ARYCAL expects: xic_files (.sqMass) and merged features (osw or oswpqd)
-    aligned_features = ARYCAL(xic_files, merged_features)
+    arycal_output = ARYCAL(xic_files, merged_features)
 
-    // Score aligned features
-    aligned_features_scored = PYPROPHET_ALIGNMENT_SCORING(aligned_features)
+    // Score aligned features (use the aligned OSW file, not the config JSON)
+    aligned_features_scored = PYPROPHET_ALIGNMENT_SCORING(arycal_output.aligned_features)
 
     // 7) PyProphet scoring on aligned features (score → infer peptide/protein)
     if (params.use_parquet) {
-      final_tsv = PYPROPHET_PARQUET_FULL(aligned_features_scored, pqp_library_decoyed)
+      PYPROPHET_PARQUET_FULL(aligned_features_scored, pqp_library_decoyed)
+      final_tsv = PYPROPHET_PARQUET_FULL.out.results_tsv
     } else {
-      final_tsv = PYPROPHET_OSW_FULL(aligned_features_scored, pqp_library_decoyed)
+      PYPROPHET_OSW_FULL(aligned_features_scored, pqp_library_decoyed)
+      final_tsv = PYPROPHET_OSW_FULL.out.results_tsv
     }
 
     // emit final TSV
