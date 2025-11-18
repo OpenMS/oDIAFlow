@@ -13,7 +13,7 @@ include { EASYPQP_CONVERTSAGE }            from '../modules/local/easypqp/conver
 include { EASYPQP_LIBRARY }                from '../modules/local/easypqp/library/main.nf'
 include { OPENSWATHASSAYGENERATOR }        from '../modules/local/openms/openswathassaygenerator/main.nf'
 include { OPENSWATHDECOYGENERATOR }        from '../modules/local/openms/openswathdecoygenerator/main.nf'
-include { OPENSWATH_EXTRACT }              from '../modules/local/openms/openswathworkflow/main.nf'
+include { OPENSWATHWORKFLOW }              from '../modules/local/openms/openswathworkflow/main.nf'
 include { PYPROPHET_EXPORT_PARQUET }       from '../modules/local/pyprophet/export_parquet/main.nf'
 include { PYPROPHET_MERGE_OSWPQ }          from '../modules/local/pyprophet/merge_oswpq/main.nf'
 include { PYPROPHET_MERGE }                from '../modules/local/pyprophet/merge/main.nf'
@@ -47,8 +47,9 @@ workflow OPEN_SWATH_E2E {
       .set { DIA_MZML }
 
     fasta_ch         = Channel.value(file(params.fasta))
-    irt_traml_ch     = params.irt_traml ? Channel.value(file(params.irt_traml)) : Channel.empty()
-    swath_windows_ch = params.swath_windows ? Channel.value(file(params.swath_windows)) : Channel.empty()
+    irt_traml_ch     = params.irt_traml ? Channel.value(file(params.irt_traml)) : Channel.value([])
+    irt_nonlinear_traml_ch = params.irt_nonlinear_traml ? Channel.value(file(params.irt_nonlinear_traml)) : Channel.value([])
+    swath_windows_ch = params.swath_windows ? Channel.value(file(params.swath_windows)) : Channel.value([])
 
     // 2) DDA search with SAGE → results TSV + matched fragments TSV
     sage_results = SAGE_SEARCH(DDA_MZML, fasta_ch)
@@ -72,7 +73,7 @@ workflow OPEN_SWATH_E2E {
     pqp_library = OPENSWATHDECOYGENERATOR(pqp_library_targets)
 
     // 5) OpenSwathWorkflow extraction per DIA mzML → per-run .osw + .sqMass (XICs)
-    per_run_osw = OPENSWATH_EXTRACT(DIA_MZML, pqp_library, irt_traml_ch, swath_windows_ch)
+    per_run_osw = OPENSWATHWORKFLOW(DIA_MZML, pqp_library, irt_traml_ch, irt_nonlinear_traml_ch, swath_windows_ch)
     
     // Collect XIC files (.sqMass) for alignment
     xic_files = per_run_osw.chrom_mzml.collect()
@@ -108,16 +109,18 @@ workflow OPEN_SWATH_E2E {
 
     // 7) XIC alignment for across-run feature linking
     // ARYCAL expects: xic_files (.sqMass) and merged features (osw or oswpqd)
-    aligned_features = ARYCAL(xic_files, merged_features)
+    arycal_output = ARYCAL(xic_files, merged_features)
 
     // Score aligned features
-    aligned_features_scored = PYPROPHET_ALIGNMENT_SCORING(aligned_features)
+    aligned_features_scored = PYPROPHET_ALIGNMENT_SCORING(arycal_output.aligned_features)
 
     // 8) PyProphet scoring on aligned features (score → infer peptide/protein)
     if (params.use_parquet) {
-      final_tsv = PYPROPHET_PARQUET_FULL(aligned_features_scored, pqp_library)
+      pyprophet_output = PYPROPHET_PARQUET_FULL(aligned_features_scored, pqp_library)
+      final_tsv = pyprophet_output.results_tsv
     } else {
-      final_tsv = PYPROPHET_OSW_FULL(aligned_features_scored, pqp_library)
+      pyprophet_output = PYPROPHET_OSW_FULL(aligned_features_scored, pqp_library)
+      final_tsv = pyprophet_output.results_tsv
     }
 
     // emit final TSV
