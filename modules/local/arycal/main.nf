@@ -12,9 +12,9 @@ process ARYCAL {
   path feature_files    // merged osw or pyprophet split parquet oswpqd directory
 
   output:
-  // For osw-sqlite input, we modify the input inplace, so there is no separate output file
-  //For oswpqd input, we write out a parquet file (feature_alignment.parquet) that is in the input oswpqd directory
-  // path "arycal_aligned.tsv", emit: aligned_features
+  // For osw-sqlite input, we modify the input inplace, so emit the input file which now contains alignment
+  // For oswpqd input, we write out a parquet file (feature_alignment.parquet) that is in the input oswpqd directory
+  path "${feature_files}", emit: aligned_features
   path "arycal_config.json", emit: config
 
   script:
