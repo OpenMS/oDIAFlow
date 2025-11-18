@@ -11,7 +11,7 @@ process PYPROPHET_EXPORT_RESULTS_REPORT {
   path scored_osw 
 
   output:
-  path "merged_score_plots.pdf"
+  path "*_score_plots.pdf"
 
   when:
   true
