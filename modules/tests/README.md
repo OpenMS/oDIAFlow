@@ -64,6 +64,21 @@ nextflow run modules/tests/pyprophet_protein_inference_test.nf \
 
 **Test data required:** `modules/tests/data/test_data.osw`
 
+### Arycal Alignment Module
+
+Test XIC-based chromatogram alignment:
+
+```bash
+nextflow run modules/tests/arycal_alignment_test.nf \
+  -c modules/tests/config/arycal_alignment.config \
+  -profile docker
+```
+
+**Test data required:**
+- `modules/tests/data/test_chrom_1.sqMass` - XIC file 1
+- `modules/tests/data/test_chrom_2.sqMass` - XIC file 2
+- `modules/tests/data/test_data.osw` - Feature file (OSW format)
+
 ### OpenSwath Library Generation
 
 Test spectral library generation from TraML:
@@ -113,6 +128,12 @@ Test configs are located in `modules/tests/config/`:
   - Reduced iterations for faster testing
   - Lower resource requirements (2 CPUs, 4GB RAM)
   - Environment variables for Docker permissions
+
+- **`arycal_alignment.config`** - Config for Arycal XIC alignment
+  - FFT-DTW alignment method with star reference
+  - Relaxed parameters for test data
+  - Smaller batch size (500) and smoothing window (7)
+  - 4 CPUs, 8GB RAM
 
 - **`openswath_library_generation.config`** - Config for library generation
   - Reduced min_transitions for small test library
@@ -212,7 +233,9 @@ All test data should be placed in `modules/tests/data/`:
 
 ```
 modules/tests/data/
-├── test_data.osw                                         # OSW file for PyProphet tests
+├── test_data.osw                                         # OSW file for PyProphet/Arycal tests
+├── test_chrom_1.sqMass                                   # XIC file 1 for Arycal
+├── test_chrom_2.sqMass                                   # XIC file 2 for Arycal
 ├── test_raw_1.mzML                                       # DDA/DIA mzML file 1
 ├── test_raw_2.mzML                                       # DDA/DIA mzML file 2
 ├── test.pqp                                              # Spectral library
