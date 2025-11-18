@@ -23,10 +23,10 @@ process PYPROPHET_CALIBRATION_REPORT {
     cp "\$file" calibration_data/
   done
   
-  # Generate calibration report
+  # Generate calibration report (pyprophet auto-detects debug files in --wd)
   pyprophet export calibration-report \\
-    --in calibration_data \\
-    --out calibration_report.pdf \\
+    --wd calibration_data \\
+    --report-file calibration_report.pdf \\
     2>&1 | tee pyprophet_calibration_report.log
   """
 }
