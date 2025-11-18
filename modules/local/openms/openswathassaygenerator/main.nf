@@ -15,6 +15,7 @@ process OPENSWATHASSAYGENERATOR {
 
   script:
   def out_file = "library_targets.${params.osag.out_type}"
+  def args = task.ext.args ?: ''
   """
   OpenSwathAssayGenerator \\
     -in ${transition_list} \\
@@ -24,7 +25,7 @@ process OPENSWATHASSAYGENERATOR {
     -allowed_fragment_types ${params.osag.allowed_fragment_types} \\
     -allowed_fragment_charges ${params.osag.allowed_fragment_charges} \\
     -debug ${params.osag.debug} \\
-    $args \\
+    ${args} \\
   2>&1 | tee openswathassaygenerator.log
   """
 }

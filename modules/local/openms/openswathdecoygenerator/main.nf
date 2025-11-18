@@ -16,6 +16,7 @@ process OPENSWATHDECOYGENERATOR {
   script:
   def out_file = "library.${params.osdg.out_type}"
   def switchKR = params.osdg.switch_kr ? "-switchKR true" : ""
+  def args = task.ext.args ?: ''
   """
   OpenSwathDecoyGenerator \\
     -in ${target_pqp} \\
@@ -26,7 +27,7 @@ process OPENSWATHDECOYGENERATOR {
     -allowed_fragment_charges ${params.osdg.allowed_fragment_charges} \\
     ${switchKR} \\
     -debug ${params.osdg.debug} \\
-    $args \\
+    ${args} \\
   2>&1 | tee openswathdecoygenerator.log
   """
 }
