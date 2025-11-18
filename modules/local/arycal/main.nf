@@ -18,9 +18,14 @@ process ARYCAL {
   path "arycal_config.json", emit: config
 
   script:
-  // Determine file types from extensions
-  def xic_type = params.arycal.xic_file_type ?: 'null'
-  def features_type = params.arycal.features_file_type ?: 'null'
+  // Auto-detect file types from extensions if not specified
+  def xic_first = xic_files instanceof List ? xic_files[0] : xic_files
+  def feature_first = feature_files instanceof List ? feature_files[0] : feature_files
+  
+  def xic_type = params.arycal.xic_file_type ?: (xic_first.toString().endsWith('.sqMass') ? 'sqmass' : 
+                                                   xic_first.toString().endsWith('.parquet') ? 'parquet' : 'null')
+  def features_type = params.arycal.features_file_type ?: (feature_first.toString().endsWith('.osw') ? 'osw' : 
+                                                             feature_first.toString().contains('.oswpq') ? 'oswpq' : 'null')
   
   // Build file path arrays for JSON
   def xic_paths = xic_files instanceof List ? xic_files.collect { "\"${it}\"" }.join(', ') : "\"${xic_files}\""
@@ -36,11 +41,11 @@ process ARYCAL {
     "xic": {
       "include-precursor": ${params.arycal.xic_include_precursor ?: false},
       "num-isotopes": ${params.arycal.xic_num_isotopes ?: 3},
-      "file-type": ${xic_type},
+      "file-type": "${xic_type}",
       "file-paths": [${xic_paths}]
     },
     "features": {
-      "file-type": ${features_type},
+      "file-type": "${features_type}",
       "file-paths": [${feature_paths}]
     },
     "filters": {
