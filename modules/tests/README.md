@@ -4,6 +4,21 @@ This directory contains unit tests for individual modules in the oDIAFlow pipeli
 
 ## Available Tests
 
+### Sage Search Module
+
+Test database search with Sage on DDA data:
+
+```bash
+nextflow run modules/tests/sage_search_test.nf \
+  -c modules/tests/config/sage_search.config \
+  -profile docker
+```
+
+**Test data required:**
+- `modules/tests/data/test_raw_1.mzML` - DDA mzML file 1
+- `modules/tests/data/test_raw_2.mzML` - DDA mzML file 2
+- `modules/tests/data/uniprotkb_organism_id_1314_AND_reviewed_2025_11_18.fasta` - Protein database
+
 ### PyProphet Modules
 
 Test individual PyProphet scoring and inference modules:
@@ -64,6 +79,12 @@ nextflow run modules/tests/openswathworkflow_test.nf \
 ## Configuration Files
 
 Test configs are located in `modules/tests/config/`:
+
+- **`sage_search.config`** - Config for Sage database search
+  - Reduced missed_cleavages for faster testing
+  - Wider mass tolerances for test data
+  - Annotate matches enabled
+  - 4 CPUs, 8GB RAM
 
 - **`pyprophet_tests.config`** - Unified config for all PyProphet tests
   - Reduced iterations for faster testing
@@ -168,10 +189,11 @@ All test data should be placed in `modules/tests/data/`:
 
 ```
 modules/tests/data/
-├── test_data.osw           # OSW file for PyProphet tests
-├── test_raw_1.mzML         # DIA mzML for OpenSwath
-├── test_raw_2.mzML         # Additional DIA file
-├── test.pqp                # Spectral library
-├── strep_iRT_small.TraML   # TraML for library generation
-└── strep_win.txt           # SWATH windows definition
+├── test_data.osw                                         # OSW file for PyProphet tests
+├── test_raw_1.mzML                                       # DDA/DIA mzML file 1
+├── test_raw_2.mzML                                       # DDA/DIA mzML file 2
+├── test.pqp                                              # Spectral library
+├── strep_iRT_small.TraML                                 # TraML for library generation
+├── strep_win.txt                                         # SWATH windows definition
+└── uniprotkb_organism_id_1314_AND_reviewed_2025_11_18.fasta  # Protein FASTA database
 ```
