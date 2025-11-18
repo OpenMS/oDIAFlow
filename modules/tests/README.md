@@ -32,6 +32,20 @@ nextflow run modules/tests/pyprophet_protein_inference_test.nf \
 
 **Test data required:** `modules/tests/data/test_data.osw`
 
+### OpenSwath Library Generation
+
+Test spectral library generation from TraML:
+
+```bash
+nextflow run modules/tests/openswath_library_generation_test.nf \
+  -c modules/tests/config/openswath_library_generation.config \
+  -profile docker
+```
+
+**Test workflow:** TraML → OpenSwathAssayGenerator (targets) → OpenSwathDecoyGenerator (targets + decoys)
+
+**Test data required:** `modules/tests/data/strep_iRT_small.TraML`
+
 ### OpenSwathWorkflow Module
 
 Test feature extraction from DIA data:
@@ -55,6 +69,11 @@ Test configs are located in `modules/tests/config/`:
   - Reduced iterations for faster testing
   - Lower resource requirements (2 CPUs, 4GB RAM)
   - Environment variables for Docker permissions
+
+- **`openswath_library_generation.config`** - Config for library generation
+  - Reduced min_transitions for small test library
+  - Shuffle method for decoy generation
+  - 2 CPUs, 4GB RAM
   
 - **`openswathworkflow.config`** - Config for OpenSwathWorkflow
   - Relaxed calibration thresholds for small test data
@@ -153,5 +172,6 @@ modules/tests/data/
 ├── test_raw_1.mzML         # DIA mzML for OpenSwath
 ├── test_raw_2.mzML         # Additional DIA file
 ├── test.pqp                # Spectral library
+├── strep_iRT_small.TraML   # TraML for library generation
 └── strep_win.txt           # SWATH windows definition
 ```
