@@ -10,7 +10,6 @@ process SAGE_SEARCH {
   input:
   tuple val(sample_id), path(dda_mzml)
   path fasta
-  path output_directory
 
   output:
   tuple val(sample_id), path("results.sage.tsv"), emit: results
@@ -50,7 +49,7 @@ process SAGE_SEARCH {
       "variable_mods": ${params.sage.variable_mods ?: '{}'},
       "max_variable_mods": ${params.sage.max_variable_mods ?: 2},
       "decoy_tag": "${params.sage.decoy_tag ?: 'rev_'}",
-      "generate_decoys": ${params.sage.generate_decoys ?: true},
+      "generate_decoys": ${params.sage.generate_decoys ?: true}
     },
     "quant": {
       "tmt": ${params.sage.tmt ?: 'null'},
@@ -83,7 +82,7 @@ process SAGE_SEARCH {
     "max_fragment_charge": ${params.sage.max_fragment_charge ?: 1},
     "min_matched_peaks": ${params.sage.min_matched_peaks ?: 4},
     "report_psms": ${params.sage.report_psms ?: 1},
-    "predict_rt": ${params.sage.predict_rt ?: true},
+    "predict_rt": ${params.sage.predict_rt ?: true}
   }
 EOF
 
@@ -92,7 +91,6 @@ EOF
   export SAGE_LOG_LEVEL=${params.sage.log_level}
   sage \\
     sage_config.json \\
-    --output_directory ${output_directory} \\
     --fasta ${fasta} \\
     ${batch_size} \\
     ${annotate_matches} \\
