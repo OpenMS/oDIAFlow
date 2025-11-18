@@ -1,0 +1,32 @@
+name: pyprophet_merge_parquet
+description: A module that runs PyProphet merge parquet to combine multiple parquet files from different runs into a single merged parquet file
+keywords:
+  - OpenSWATH
+  - DIA
+  - PyProphet
+  - Parquet
+tools:
+  - PyProphet:
+      description: |
+        PyProphet is a statistical tool for semi-supervised scoring and FDR estimation of peptide/protein identifications from DIA data processed with OpenSWATH.
+      homepage: https://openswath.org
+      documentation: https://pyprophet.readthedocs.io/en/latest/cli.html
+input:
+  - oswpq:
+      type: directory
+      description: |
+        A single .oswpq directory containing multiple run subdirectories (e.g., run1.oswpq, run2.oswpq).
+        Each run subdirectory contains precursors_features.parquet and transition_features.parquet files.
+        The directory may also contain a feature_alignment.parquet file.
+      pattern: "*.oswpq"
+output:
+  - merged:
+      type: file
+      description: Single merged parquet file containing combined data from all runs.
+      pattern: "merged.parquet"
+  - log:
+      type: file
+      description: Log file captured from PyProphet merge parquet.
+      pattern: "pyprophet_merge_parquet.log"
+authors:
+  - "@singjc"
