@@ -36,7 +36,7 @@ process OPENSWATHWORKFLOW {
   OpenSwathWorkflow \\
     -in ${dia_mzml} \\
     -tr ${pqp} \\
-    -auto_irt true \\
+    -auto_irt ${params.osw.auto_irt} \\
     -Calibration:irt_bins ${params.osw.linear_irt_bins} \\
     -Calibration:irt_peptides_per_bin ${params.osw.linear_irt_peptides_per_bin} \\
     -Calibration:irt_bins_nonlinear ${params.osw.nonlinear_irt_bins} \\
