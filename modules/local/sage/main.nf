@@ -22,7 +22,7 @@ process SAGE_SEARCH {
   def write_pin = params.sage.write_pin ? '--write-pin' : ''
   def parquet = params.sage.parquet ? '--parquet' : ''
   def batch_size = params.sage.batch_size == 0 ? '' : "--batch-size ${params.sage.batch_size}"
-  
+  def write_report = params.sage.write_report ? '--write-report' : ''
   """
   # Generate Sage JSON config
   cat > sage_config.json <<EOF
@@ -97,6 +97,7 @@ EOF
     ${annotate_matches} \\
     ${write_pin} \\
     ${parquet} \\
+    ${write_report} \\
     ${dda_mzml} \\
   2>&1 | tee sage_search.log
   """
