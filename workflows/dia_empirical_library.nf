@@ -36,9 +36,11 @@ include { PYPROPHET_PARQUET_FULL }         from '../subworkflows/local/pyprophet
 workflow OPEN_SWATH_E2E {
 
     // 1) Gather inputs
+    // Collect all DDA files for a single Sage search
     Channel
       .fromPath(params.dda_glob, checkIfExists: true)
-      .map { it -> tuple(it.baseName, it) }
+      .collect()
+      .map { files -> tuple("all_dda", files) }
       .set { DDA_MZML }
 
     Channel
@@ -52,10 +54,12 @@ workflow OPEN_SWATH_E2E {
     swath_windows_ch = params.swath_windows ? Channel.value(file(params.swath_windows)) : Channel.value([])
 
     // 2) DDA search with SAGE → results TSV + matched fragments TSV
+    // Sage searches all DDA files together
     sage_results = SAGE_SEARCH(DDA_MZML, fasta_ch)
 
     // 3) Convert SAGE → EasyPQP pickle format (per run)
-    // Join results and matched_fragments by sample_id, then pass as tuple
+    // We need to process results per-run for EasyPQP, but Sage output is combined
+    // For now, use the combined output (sample_id will be "all_dda")
     sage_combined = sage_results.results.join(sage_results.matched_fragments)
     
     EASYPQP_CONVERTSAGE(sage_combined)
