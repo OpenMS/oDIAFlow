@@ -44,9 +44,8 @@ workflow OPEN_SWATH_E2E {
       .set { DDA_MZML }
 
     Channel
-      .fromPath(params.dia_glob, checkIfExists: true)
-      .map { it -> tuple(it.baseName, it) }
-      .set { DIA_MZML }
+        .fromList(file(params.dia_glob))
+        .set { DIA_MZML }
 
     fasta_ch         = Channel.value(file(params.fasta))
     irt_traml_ch     = params.irt_traml ? Channel.value(file(params.irt_traml)) : Channel.value([])
