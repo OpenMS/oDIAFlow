@@ -11,15 +11,19 @@ process EASYPQP_CONVERTSAGE {
   tuple val(sample_id), path(sage_results), path(sage_matched_fragments)  // .tsv or .parquet
 
   output:
-  tuple val(sample_id), path("*.psmpkl"), emit: psmpkl
-  tuple val(sample_id), path("*.peakpkl"), emit: peakpkl
+  tuple val(sample_id), path("*.psmpkl", includeInputs: false, hidden: false), emit: psmpkl
+  tuple val(sample_id), path("*.peakpkl", includeInputs: false, hidden: false), emit: peakpkl
 
   script:
   def args = task.ext.args ?: ''
   """
+  # Copy input files locally to avoid symlink issues
+  cp ${sage_results} sage_results_local.tsv
+  cp ${sage_matched_fragments} sage_fragments_local.tsv
+  
   easypqp convertsage \\
-    --sage_psm ${sage_results} \\
-    --sage_fragments ${sage_matched_fragments} \\
+    --sage_psm sage_results_local.tsv \\
+    --sage_fragments sage_fragments_local.tsv \\
     ${args} \\
   2>&1 | tee easypqp_convertsage_${sample_id}.log
   """
