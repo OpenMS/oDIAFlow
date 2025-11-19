@@ -35,7 +35,7 @@ process SAGE_SEARCH {
         "min_len": ${params.sage.min_len ?: 'null'},
         "max_len": ${params.sage.max_len ?: 'null'},
         "cleave_at": "${params.sage.cleave_at ?: 'KR'}",
-        "restrict": "${params.sage.restrict ?: 'P'}",
+        "restrict": ${params.sage.restrict ?: 'null'},
         "c_terminal": ${params.sage.c_terminal ?: 'null'},
         "semi_enzymatic": ${params.sage.semi_enzymatic ?: 'null'}
       },
@@ -83,7 +83,7 @@ process SAGE_SEARCH {
     "min_matched_peaks": ${params.sage.min_matched_peaks ?: 4},
     "report_psms": ${params.sage.report_psms ?: 1},
     "predict_rt": ${params.sage.predict_rt ?: true},
-    "write_report": ${params.sage.write_report ?: false}
+    "write_report": ${params.sage.write_report}
   }
 EOF
 
