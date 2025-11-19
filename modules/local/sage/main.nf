@@ -82,7 +82,8 @@ process SAGE_SEARCH {
     "max_fragment_charge": ${params.sage.max_fragment_charge ?: 1},
     "min_matched_peaks": ${params.sage.min_matched_peaks ?: 4},
     "report_psms": ${params.sage.report_psms ?: 1},
-    "predict_rt": ${params.sage.predict_rt ?: true}
+    "predict_rt": ${params.sage.predict_rt ?: true},
+    "write_report": ${params.sage.write_report ?: false}
   }
 EOF
 
