@@ -25,7 +25,7 @@ process OPENSWATHWORKFLOW {
   script:
   def args = task.ext.args ?: ''
   def cacheFlags = params.osw.cache_in_mem ? "-readOptions cacheWorkingInMemory -tempDirectory \$PWD/tmp_${dia_mzml.baseName}" : ""
-  def pasefFlags = params.osw.pasef ? "-pasef -ion_mobility_window ${params.osw.im_window} -im_extraction_window_ms1 ${params.osw.im_extraction_window_ms1} -irt_im_extraction_window ${params.osw.irt_im_extraction_window} -Calibration:MassIMCorrection:debug_im_file ${dia_mzml.baseName}_debug_calibration_im.txt -Scoring:Scores:use_ion_mobility_scores true -Scoring:add_up_spectra 3 -Scoring:spectrum_merge_method_type dynamic -Scoring:merge_spectra_by_peak_width_fraction 0.20 -Scoring:apply_im_peak_picking " : ""
+  def pasefFlags = params.osw.pasef ? "-pasef -ion_mobility_window ${params.osw.im_window} -im_extraction_window_ms1 ${params.osw.im_extraction_window_ms1} -irt_im_extraction_window ${params.osw.irt_im_extraction_window} -Calibration:MassIMCorrection:debug_im_file ${dia_mzml.baseName}_debug_calibration_im.txt -Scoring:Scores:use_ion_mobility_scores -Scoring:add_up_spectra 3 -Scoring:spectrum_merge_method_type dynamic -Scoring:merge_spectra_by_peak_width_fraction 0.20 -Scoring:apply_im_peak_picking " : ""
   def irtFlag    = irt_traml.name != 'input.1' ? "-Calibration:tr_irt ${irt_traml}" : ""
   def irtFlagNonlinear = irt_nonlinear_traml.name != 'input.2' ? "-Calibration:tr_irt_nonlinear ${irt_nonlinear_traml}" : ""
   def swathFlag  = swath_windows.name != 'input.3' ? "-swath_windows_file ${swath_windows}" : ""
