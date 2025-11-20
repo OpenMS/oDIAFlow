@@ -1,6 +1,6 @@
 nextflow.enable.dsl=2
 
-include { OPEN_SWATH_EMPIRICAL_LIBRARY } from './workflows/dia_empirical_library.nf'
+include { OPEN_SWATH_E2E } from './workflows/dia_empirical_library.nf'
 include { OPEN_SWATH_INSILICO_LIBRARY } from './workflows/dia_insilico_library.nf'
 
 workflow {
@@ -9,6 +9,6 @@ workflow {
     OPEN_SWATH_INSILICO_LIBRARY()
   } else {
     // Default to empirical (DDA+DIA) workflow
-    OPEN_SWATH_EMPIRICAL_LIBRARY()
+    OPEN_SWATH_E2E()
   }
 }
