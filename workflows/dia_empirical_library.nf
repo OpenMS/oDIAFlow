@@ -37,15 +37,32 @@ workflow OPEN_SWATH_E2E {
 
     // 1) Gather inputs
     // Collect all DDA files for a single Sage search
-    Channel
-      .fromPath(params.dda_glob, checkIfExists: true)
-      .collect()
-      .map { files -> tuple("all_dda", files) }
-      .set { DDA_MZML }
+    // Handle .d directories (Bruker TDF) or regular files (mzML, mzML.gz)
+    if (params.dda_glob.endsWith('.d')) {
+        Channel
+          .fromPath(params.dda_glob, type: 'dir', checkIfExists: true)
+          .collect()
+          .map { files -> tuple("all_dda", files) }
+          .set { DDA_MZML }
+    } else {
+        Channel
+          .fromPath(params.dda_glob, checkIfExists: true)
+          .collect()
+          .map { files -> tuple("all_dda", files) }
+          .set { DDA_MZML }
+    }
 
-    Channel
-        .fromList(file(params.dia_glob))
-        .set { DIA_MZML }
+    // DIA files - need to check if .d or mzML
+    if (params.dia_glob.endsWith('.d')) {
+        Channel
+          .fromPath(params.dia_glob, type: 'dir', checkIfExists: true)
+          .map { it -> tuple(it.baseName, it) }
+          .set { DIA_MZML }
+    } else {
+        Channel
+            .fromList(file(params.dia_glob))
+            .set { DIA_MZML }
+    }
 
     fasta_ch         = Channel.value(file(params.fasta))
     irt_traml_ch     = params.irt_traml ? Channel.value(file(params.irt_traml)) : Channel.value([])
