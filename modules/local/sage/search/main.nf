@@ -7,8 +7,9 @@ process SAGE_SEARCH {
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
         'ghcr.io/openswath/openswath:dev' }" // Temp use dev image which contains OpenMS develop branch for latests changes to the OpenSwathWorkflow
 
-  publishDir "${params.outdir}/sage", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
-  publishDir "${params.outdir}/sage", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "*.sage.tsv"
+  publishDir "${params.outdir}/sage/${search_type}", mode: params.publish_dir_mode, enabled: params.save_reports, pattern: "*.html", saveAs: { filename -> "${search_type}_${filename}" }
+  publishDir "${params.outdir}/logs/sage", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
+  publishDir "${params.outdir}/sage/${search_type}", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "*.sage.tsv"
 
   input:
   tuple val(sample_id), path(mzml_files), val(search_type)  // search_type: 'dda' or 'dia'
@@ -19,6 +20,7 @@ process SAGE_SEARCH {
   tuple val(sample_id), path("results.sage.parquet"), val(search_type), emit: results_parquet, optional: true
   tuple val(sample_id), path("matched_fragments.sage.tsv"), val(search_type), emit: matched_fragments, optional: true
   path "*.pin", emit: pin, optional: true
+  path "*.html", emit: report, optional: true
   path "*.log", emit: log
 
   script:
