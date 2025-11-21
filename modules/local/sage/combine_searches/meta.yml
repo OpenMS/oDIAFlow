@@ -1,0 +1,62 @@
+name: sage_combine_searches
+description: Combine Sage search results from DDA and DIA searches into a single TSV file for library building
+keywords:
+  - sage
+  - proteomics
+  - dda
+  - dia
+  - search
+  - combine
+tools:
+  - sage:
+      description: Proteomics search engine for DDA and DIA data
+      homepage: https://github.com/lazear/sage
+      documentation: https://github.com/lazear/sage/wiki
+      tool_dev_url: https://github.com/lazear/sage
+      doi: ""
+      licence: ["MIT"]
+
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test' ]
+  - dda_results:
+      type: file
+      description: Sage DDA search results TSV file
+      pattern: "*.tsv"
+  - dia_results:
+      type: file
+      description: Sage DIA search results TSV file
+      pattern: "*.tsv"
+  - dda_fragments:
+      type: file
+      description: Sage DDA matched fragments TSV file
+      pattern: "*.tsv"
+  - dia_fragments:
+      type: file
+      description: Sage DIA matched fragments TSV file
+      pattern: "*.tsv"
+
+output:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test' ]
+  - results:
+      type: file
+      description: Combined Sage search results TSV file
+      pattern: "combined_results.sage.tsv"
+  - matched_fragments:
+      type: file
+      description: Combined Sage matched fragments TSV file
+      pattern: "combined_matched_fragments.sage.tsv"
+  - log:
+      type: file
+      description: Log file from combining results
+      pattern: "*.log"
+
+authors:
+  - "@singjc"

@@ -1,5 +1,5 @@
 process SAGE_SEARCH {
-  tag "sage_search"
+  tag "${search_type}_sage_search"
   label 'process_high'
   label 'sage'
 
@@ -11,17 +11,21 @@ process SAGE_SEARCH {
   publishDir "${params.outdir}/sage", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "*.sage.tsv"
 
   input:
-  tuple val(sample_id), path(dda_mzml)
+  tuple val(sample_id), path(mzml_files), val(search_type)  // search_type: 'dda' or 'dia'
   path fasta
 
   output:
-  tuple val(sample_id), path("results.sage.tsv"), emit: results
-  tuple val(sample_id), path("results.sage.parquet"), emit: results_parquet, optional: true
-  tuple val(sample_id), path("matched_fragments.sage.tsv"), emit: matched_fragments, optional: true
+  tuple val(sample_id), path("results.sage.tsv"), val(search_type), emit: results
+  tuple val(sample_id), path("results.sage.parquet"), val(search_type), emit: results_parquet, optional: true
+  tuple val(sample_id), path("matched_fragments.sage.tsv"), val(search_type), emit: matched_fragments, optional: true
   path "*.pin", emit: pin, optional: true
   path "*.log", emit: log
 
   script:
+  // Determine chimera and wide_window based on search type
+  def chimera_setting = search_type == 'dia' ? params.sage.dia_chimera : params.sage.chimera
+  def wide_window_setting = search_type == 'dia' ? params.sage.dia_wide_window : params.sage.wide_window
+  
   def annotate_matches = params.sage.annotate_matches ? '--annotate-matches' : ''
   def write_pin = params.sage.write_pin ? '--write-pin' : ''
   def parquet = params.sage.parquet ? '--parquet' : ''
@@ -79,8 +83,8 @@ process SAGE_SEARCH {
     "precursor_charge": [${params.sage.precursor_charge_min ?: 2}, ${params.sage.precursor_charge_max ?: 4}],
     "isotope_errors": [${params.sage.isotope_errors_min ?: -1}, ${params.sage.isotope_errors_max ?: 3}],
     "deisotope": ${params.sage.deisotope ?: true},
-    "chimera": ${params.sage.chimera ?: false},
-    "wide_window": ${params.sage.wide_window ?: false},
+    "chimera": ${chimera_setting},
+    "wide_window": ${wide_window_setting},
     "min_peaks": ${params.sage.min_peaks ?: 15},
     "max_peaks": ${params.sage.max_peaks ?: 150},
     "max_fragment_charge": ${params.sage.max_fragment_charge ?: 1},
@@ -102,7 +106,7 @@ EOF
     ${write_pin} \\
     ${parquet} \\
     ${write_report} \\
-    ${dda_mzml} \\
-  2>&1 | tee sage_search.log
+    ${mzml_files} \\
+  2>&1 | tee sage_search_${search_type}.log
   """
 }
