@@ -207,14 +207,14 @@ workflow OPEN_SWATH_E2E {
     arycal_output = ARYCAL(xic_files, merged_features)
 
     // Score aligned features
-    aligned_features_scored = PYPROPHET_ALIGNMENT_SCORING(arycal_output.aligned_features)
+    PYPROPHET_ALIGNMENT_SCORING(arycal_output.aligned_features)
 
     // 8) PyProphet scoring on aligned features (score → infer peptide/protein)
     if (params.use_parquet) {
-      pyprophet_output = PYPROPHET_PARQUET_FULL(aligned_features_scored, OPENSWATHDECOYGENERATOR.out.library)
+      pyprophet_output = PYPROPHET_PARQUET_FULL(PYPROPHET_ALIGNMENT_SCORING.out.scored, OPENSWATHDECOYGENERATOR.out.library)
       final_tsv = pyprophet_output.results_tsv
     } else {
-      pyprophet_output = PYPROPHET_OSW_FULL(aligned_features_scored, OPENSWATHDECOYGENERATOR.out.library)
+      pyprophet_output = PYPROPHET_OSW_FULL(PYPROPHET_ALIGNMENT_SCORING.out.scored, OPENSWATHDECOYGENERATOR.out.library)
       final_tsv = pyprophet_output.results_tsv
     }
 
