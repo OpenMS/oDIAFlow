@@ -7,6 +7,10 @@ process ARYCAL {
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
         'ghcr.io/openswath/openswath:dev' }"
 
+  publishDir "${params.outdir}/pyprophet", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "*.osw"
+  publishDir "${params.outdir}/pyprophet", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "*.oswpqd"
+  publishDir "${params.outdir}/logs/arycal", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
+
   input:
   path xic_files        // sqMass or parquet files containing XIC data
   path feature_files    // merged osw or pyprophet split parquet oswpqd directory
@@ -16,6 +20,7 @@ process ARYCAL {
   // For oswpqd input, we write out a parquet file (feature_alignment.parquet) that is in the input oswpqd directory
   path "${feature_files}", emit: aligned_features
   path "arycal_config.json", emit: config
+  path "*.log", emit: log, optional: true
 
   script:
   // Auto-detect file types from extensions if not specified

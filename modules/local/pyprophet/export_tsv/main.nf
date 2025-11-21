@@ -5,13 +5,17 @@ process PYPROPHET_EXPORT_TSV {
 
   container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
-        'ghcr.io/openswath/openswath:dev' }" // Temp use dev image which contains OpenMS develop branch for latests changes to the OpenSwathWorkflow
+        'ghcr.io/openswath/openswath:dev' }" // Temp use dev image which contains OpenMS develop branch for latests changes to the OpenswathWorkflow
+
+  publishDir "${params.outdir}/results", mode: params.publish_dir_mode, enabled: true, pattern: "merged.tsv"
+  publishDir "${params.outdir}/logs/pyprophet", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
 
   input:
   path scored_osw
 
   output:
   path "merged.tsv"
+  path "*.log", emit: log
 
   script:
   def args = task.ext.args ?: ''

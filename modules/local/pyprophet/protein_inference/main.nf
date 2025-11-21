@@ -7,6 +7,9 @@ process PYPROPHET_INFER_PROTEIN {
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
         'ghcr.io/openswath/openswath:dev' }" // Temp use dev image which contains OpenMS develop branch for latests changes to the OpenSwathWorkflow
 
+  publishDir "${params.outdir}/reports", mode: params.publish_dir_mode, enabled: params.save_reports, pattern: "*.pdf"
+  publishDir "${params.outdir}/logs/pyprophet", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
+
   input:
   path scored_osw
 
@@ -15,6 +18,7 @@ process PYPROPHET_INFER_PROTEIN {
   path "*_global_protein_report.pdf", emit: global_report, optional: true
   path "*_experiment-wide_protein_report.pdf", emit: experiment_wide_report, optional: true
   path "*_run-specific_protein_report.pdf", emit: run_specific_report, optional: true
+  path "*.log", emit: log
 
   script:
   def args = task.ext.args ?: ''
