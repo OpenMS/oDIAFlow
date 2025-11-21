@@ -32,11 +32,11 @@ workflow PYPROPHET_OSW_FULL {
 
   // Export results report and TSV (optional, controlled via params.pyprophet.export.*)
   PYPROPHET_EXPORT_RESULTS_REPORT(prot_inferred.protein_inferred)
-  final_tsv = PYPROPHET_EXPORT_TSV(prot_inferred.protein_inferred)
+  PYPROPHET_EXPORT_TSV(prot_inferred.protein_inferred)
 
   emit:
     scored_osw = scored.scored
     peptide_inferred = pep_inferred.peptide_inferred
     protein_inferred = prot_inferred.protein_inferred
-    results_tsv = final_tsv
+    results_tsv = PYPROPHET_EXPORT_TSV.out.tsv
 }

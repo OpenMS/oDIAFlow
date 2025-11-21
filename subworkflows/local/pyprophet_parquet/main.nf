@@ -32,13 +32,13 @@ workflow PYPROPHET_PARQUET_FULL {
   prot_inferred = PYPROPHET_INFER_PROTEIN(pep_inferred.peptide_inferred)
 
   // Export results report and TSV (optional, controlled via params.pyprophet.export.*)
-  merged_parquet = PYPROPHET_MERGE_PARQUET(prot_inferred.protein_inferred)
-  PYPROPHET_EXPORT_RESULTS_REPORT(merged_parquet)
-  final_tsv = PYPROPHET_EXPORT_TSV(prot_inferred.protein_inferred)
+  PYPROPHET_MERGE_PARQUET(prot_inferred.protein_inferred)
+  PYPROPHET_EXPORT_RESULTS_REPORT(PYPROPHET_MERGE_PARQUET.out.merged)
+  PYPROPHET_EXPORT_TSV(prot_inferred.protein_inferred)
 
   emit:
     scored_oswpqd = scored.scored
     peptide_inferred = pep_inferred.peptide_inferred
     protein_inferred = prot_inferred.protein_inferred
-    results_tsv = final_tsv
+    results_tsv = PYPROPHET_EXPORT_TSV.out.tsv
 }

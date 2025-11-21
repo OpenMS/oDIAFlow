@@ -14,7 +14,7 @@ process PYPROPHET_EXPORT_TSV {
   path scored_osw
 
   output:
-  path "merged.tsv"
+  path "merged.tsv", emit: tsv
   path "*.log", emit: log
 
   script:
