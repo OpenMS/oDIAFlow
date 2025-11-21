@@ -29,6 +29,33 @@ include { PYPROPHET_PARQUET_FULL }         from '../subworkflows/local/pyprophet
 
 /*
 ========================================================================================
+    PUBLISH OUTPUTS
+========================================================================================
+*/
+
+// Helper function to create publishDir settings
+def getPublishSettings(subdirectory, enabled = true, saveFor = 'all') {
+    def settings = [
+        path: { "${params.outdir}/${subdirectory}" },
+        mode: params.publish_dir_mode,
+        enabled: enabled
+    ]
+    
+    if (saveFor == 'logs') {
+        settings.enabled = params.save_logs
+        settings.pattern = "*.log"
+    } else if (saveFor == 'reports') {
+        settings.enabled = params.save_reports
+        settings.pattern = "*.pdf"
+    } else if (saveFor == 'intermediates') {
+        settings.enabled = params.save_intermediates
+    }
+    
+    return settings
+}
+
+/*
+========================================================================================
     RUN MAIN WORKFLOW
 ========================================================================================
 */
