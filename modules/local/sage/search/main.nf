@@ -16,12 +16,12 @@ process SAGE_SEARCH {
   path fasta
 
   output:
-  tuple val(sample_id), path("results.sage.tsv"), val(search_type), emit: results
-  tuple val(sample_id), path("results.sage.parquet"), val(search_type), emit: results_parquet, optional: true
-  tuple val(sample_id), path("matched_fragments.sage.tsv"), val(search_type), emit: matched_fragments, optional: true
-  path "*.pin", emit: pin, optional: true
-  path "*.html", emit: report, optional: true
-  path "*.log", emit: log
+  tuple val(sample_id), path("${sample_id}_${search_type}_results.sage.tsv"), val(search_type), emit: results
+  tuple val(sample_id), path("${sample_id}_${search_type}_results.sage.parquet"), val(search_type), emit: results_parquet, optional: true
+  tuple val(sample_id), path("${sample_id}_${search_type}_matched_fragments.sage.tsv"), val(search_type), emit: matched_fragments, optional: true
+  path "${sample_id}_${search_type}_*.pin", emit: pin, optional: true
+  path "${sample_id}_${search_type}_*.html", emit: report, optional: true
+  path "${sample_id}_${search_type}_*.log", emit: log
 
   script:
   // Determine chimera and wide_window based on search type
@@ -110,5 +110,24 @@ EOF
     ${write_report} \\
     ${mzml_files} \\
   2>&1 | tee sage_search_${search_type}.log
+  # Rename outputs to include sample_id and search_type to avoid filename collisions
+  if [ -f results.sage.tsv ]; then
+    mv results.sage.tsv ${sample_id}_${search_type}_results.sage.tsv
+  fi
+  if [ -f results.sage.parquet ]; then
+    mv results.sage.parquet ${sample_id}_${search_type}_results.sage.parquet
+  fi
+  if [ -f matched_fragments.sage.tsv ]; then
+    mv matched_fragments.sage.tsv ${sample_id}_${search_type}_matched_fragments.sage.tsv
+  fi
+  if ls *.pin 1> /dev/null 2>&1; then
+    for f in *.pin; do mv "$f" "${sample_id}_${search_type}_$f"; done
+  fi
+  if ls *.html 1> /dev/null 2>&1; then
+    for f in *.html; do mv "$f" "${sample_id}_${search_type}_$f"; done
+  fi
+  if [ -f sage_search_${search_type}.log ]; then
+    mv sage_search_${search_type}.log ${sample_id}_${search_type}_sage_search.log
+  fi
   """
 }
