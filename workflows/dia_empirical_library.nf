@@ -8,7 +8,8 @@
 // MODULES: Local to the pipeline
 //
 include { DIAPYSEF_TDF_TO_MZML }           from '../modules/local/diapysef_tdf_to_mzml/main.nf'
-include { SAGE_SEARCH }                    from '../modules/local/sage/main.nf'
+include { SAGE_SEARCH }                    from '../modules/local/sage/search/main.nf'
+include { SAGE_COMBINE_RESULTS }           from '../modules/local/sage/combine_searches/main.nf'
 include { EASYPQP_CONVERTSAGE }            from '../modules/local/easypqp/convertsage/main.nf'
 include { EASYPQP_LIBRARY }                from '../modules/local/easypqp/library/main.nf'
 include { OPENSWATHASSAYGENERATOR }        from '../modules/local/openms/openswathassaygenerator/main.nf'
@@ -69,17 +70,37 @@ workflow OPEN_SWATH_E2E {
         Channel
           .fromPath(params.dda_glob, type: 'dir', checkIfExists: true)
           .collect()
-          .map { files -> tuple("all_dda", files) }
-          .set { DDA_MZML }
+          .map { files -> tuple("all_dda", files, "dda") }
+          .set { DDA_FOR_SEARCH }
     } else {
         Channel
           .fromPath(params.dda_glob, checkIfExists: true)
           .collect()
-          .map { files -> tuple("all_dda", files) }
-          .set { DDA_MZML }
+          .map { files -> tuple("all_dda", files, "dda") }
+          .set { DDA_FOR_SEARCH }
     }
 
-    // DIA files - need to check if .d or mzML
+    // Optional: Collect DIA files for library building with Sage
+    if (params.sage.search_dia_for_lib && params.dia_for_lib_glob) {
+        if (params.dia_for_lib_glob.endsWith('.d')) {
+            Channel
+              .fromPath(params.dia_for_lib_glob, type: 'dir', checkIfExists: true)
+              .collect()
+              .map { files -> tuple("all_dia_lib", files, "dia") }
+              .set { DIA_FOR_SEARCH }
+        } else {
+            Channel
+              .fromPath(params.dia_for_lib_glob, checkIfExists: true)
+              .collect()
+              .map { files -> tuple("all_dia_lib", files, "dia") }
+              .set { DIA_FOR_SEARCH }
+        }
+    } else {
+        // Create empty channel if not searching DIA
+        Channel.empty().set { DIA_FOR_SEARCH }
+    }
+
+    // DIA files for extraction (separate from DIA for library)
     if (params.dia_glob.endsWith('.d')) {
         Channel
           .fromPath(params.dia_glob, type: 'dir', checkIfExists: true)
@@ -96,15 +117,39 @@ workflow OPEN_SWATH_E2E {
     irt_nonlinear_traml_ch = params.irt_nonlinear_traml ? Channel.value(file(params.irt_nonlinear_traml)) : Channel.value([])
     swath_windows_ch = params.swath_windows ? Channel.value(file(params.swath_windows)) : Channel.value([])
 
-    // 2) DDA search with SAGE → results TSV + matched fragments TSV
+    // 2) DDA and optional DIA search with SAGE → results TSV + matched fragments TSV
     // Sage searches all DDA files together
-    sage_results = SAGE_SEARCH(DDA_MZML, fasta_ch)
+    dda_sage_results = SAGE_SEARCH(DDA_FOR_SEARCH, fasta_ch)
 
-    // 3) Convert SAGE → EasyPQP pickle format (per run)
-    // We need to process results per-run for EasyPQP, but Sage output is combined
-    // For now, use the combined output (sample_id will be "all_dda")
-    sage_combined = sage_results.results.join(sage_results.matched_fragments)
-    
+    // If searching DIA for library, run Sage on DIA files too
+    if (params.sage.search_dia_for_lib && params.dia_for_lib_glob) {
+        dia_sage_results = SAGE_SEARCH(DIA_FOR_SEARCH, fasta_ch)
+        
+        // Combine DDA and DIA results
+        combined_input = dda_sage_results.results
+          .map { sample_id, results_tsv, search_type -> tuple("combined", results_tsv) }
+          .join(
+            dia_sage_results.results.map { sample_id, results_tsv, search_type -> tuple("combined", results_tsv) }
+          )
+          .join(
+            dda_sage_results.matched_fragments.map { sample_id, fragments_tsv, search_type -> tuple("combined", fragments_tsv) }
+          )
+          .join(
+            dia_sage_results.matched_fragments.map { sample_id, fragments_tsv, search_type -> tuple("combined", fragments_tsv) }
+          )
+        
+        sage_combined_output = SAGE_COMBINE_RESULTS(combined_input)
+        sage_combined = sage_combined_output.results.join(sage_combined_output.matched_fragments)
+    } else {
+        // Use only DDA results
+        sage_combined = dda_sage_results.results
+          .map { sample_id, results_tsv, search_type -> tuple(sample_id, results_tsv) }
+          .join(
+            dda_sage_results.matched_fragments.map { sample_id, fragments_tsv, search_type -> tuple(sample_id, fragments_tsv) }
+          )
+    }
+
+    // 3) Convert SAGE → EasyPQP pickle format
     EASYPQP_CONVERTSAGE(sage_combined)
 
     // 4) Build spectral library (PQP) with EasyPQP
