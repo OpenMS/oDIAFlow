@@ -9,6 +9,7 @@
 //
 include { DIAPYSEF_TDF_TO_MZML }           from '../modules/local/diapysef_tdf_to_mzml/main.nf'
 include { SAGE_SEARCH }                    from '../modules/local/sage/search/main.nf'
+include { SAGE_SEARCH as SAGE_SEARCH_DIA } from '../modules/local/sage/search/main.nf'
 include { SAGE_COMBINE_RESULTS }           from '../modules/local/sage/combine_searches/main.nf'
 include { EASYPQP_CONVERTSAGE }            from '../modules/local/easypqp/convertsage/main.nf'
 include { EASYPQP_LIBRARY }                from '../modules/local/easypqp/library/main.nf'
@@ -123,7 +124,7 @@ workflow OPEN_SWATH_E2E {
 
     // If searching DIA for library, run Sage on DIA files too
     if (params.sage.search_dia_for_lib && params.dia_for_lib_glob) {
-        dia_sage_results = SAGE_SEARCH(DIA_FOR_SEARCH, fasta_ch)
+        dia_sage_results = SAGE_SEARCH_DIA(DIA_FOR_SEARCH, fasta_ch)
         
         // Combine DDA and DIA results
         combined_input = dda_sage_results.results
