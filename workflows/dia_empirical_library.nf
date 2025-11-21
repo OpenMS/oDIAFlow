@@ -160,13 +160,13 @@ workflow OPEN_SWATH_E2E {
     EASYPQP_LIBRARY(all_psmpkls, all_peakpkls)
 
     // Generate assay library from transition TSV
-    pqp_library_targets = OPENSWATHASSAYGENERATOR(EASYPQP_LIBRARY.out.library_tsv)
+    OPENSWATHASSAYGENERATOR(EASYPQP_LIBRARY.out.library_tsv)
 
     // Generate decoys for the assay library
-    pqp_library = OPENSWATHDECOYGENERATOR(pqp_library_targets)
+    OPENSWATHDECOYGENERATOR(OPENSWATHASSAYGENERATOR.out.library)
 
     // 5) OpenSwathWorkflow extraction per DIA mzML → per-run .osw + .sqMass (XICs)
-    per_run_osw = OPENSWATHWORKFLOW(DIA_MZML, pqp_library, irt_traml_ch, irt_nonlinear_traml_ch, swath_windows_ch)
+    per_run_osw = OPENSWATHWORKFLOW(DIA_MZML, OPENSWATHDECOYGENERATOR.out.library, irt_traml_ch, irt_nonlinear_traml_ch, swath_windows_ch)
     
     // Collect XIC files (.sqMass) for alignment
     xic_files = per_run_osw.chrom_mzml.collect()
@@ -197,7 +197,7 @@ workflow OPEN_SWATH_E2E {
     } else {
       // For SQLite format, merge OSW files
       all_osw_files = per_run_osw.osw.collect()
-      merged_features = PYPROPHET_MERGE(all_osw_files, pqp_library)
+      merged_features = PYPROPHET_MERGE(all_osw_files, OPENSWATHDECOYGENERATOR.out.library)
     }
 
     // 7) XIC alignment for across-run feature linking
@@ -209,10 +209,10 @@ workflow OPEN_SWATH_E2E {
 
     // 8) PyProphet scoring on aligned features (score → infer peptide/protein)
     if (params.use_parquet) {
-      pyprophet_output = PYPROPHET_PARQUET_FULL(aligned_features_scored, pqp_library)
+      pyprophet_output = PYPROPHET_PARQUET_FULL(aligned_features_scored, OPENSWATHDECOYGENERATOR.out.library)
       final_tsv = pyprophet_output.results_tsv
     } else {
-      pyprophet_output = PYPROPHET_OSW_FULL(aligned_features_scored, pqp_library)
+      pyprophet_output = PYPROPHET_OSW_FULL(aligned_features_scored, OPENSWATHDECOYGENERATOR.out.library)
       final_tsv = pyprophet_output.results_tsv
     }
 
