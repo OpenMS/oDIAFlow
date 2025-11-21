@@ -7,11 +7,15 @@ process PYPROPHET_MERGE_OSWPQ {
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
         'ghcr.io/openswath/openswath:dev' }"
 
+  publishDir "${params.outdir}/pyprophet", mode: params.publish_dir_mode, enabled: params.save_merged_osw, pattern: "*.oswpqd"
+  publishDir "${params.outdir}/logs/pyprophet", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
+
   input:
   path oswpq_dirs  // Multiple .oswpq directories from PYPROPHET_EXPORT_PARQUET
 
   output:
   path "all_runs.oswpqd", emit: merged_oswpqd
+  path "*.log", emit: log
 
   script:
   """
@@ -25,6 +29,6 @@ process PYPROPHET_MERGE_OSWPQ {
     fi
   done
   
-  echo "Merged \$(ls all_runs.oswpqd | wc -l) .oswpq directories into all_runs.oswpqd"
+  echo "Merged \$(ls all_runs.oswpqd | wc -l) .oswpq directories into all_runs.oswpqd" | tee pyprophet_merge_oswpq.log
   """
 }

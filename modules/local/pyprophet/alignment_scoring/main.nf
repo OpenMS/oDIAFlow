@@ -7,11 +7,14 @@ process PYPROPHET_ALIGNMENT_SCORING {
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
         'ghcr.io/openswath/openswath:dev' }" // Temp use dev image which contains OpenMS develop branch for latests changes to the OpenSwathWorkflow
 
+  publishDir "${params.outdir}/logs/pyprophet", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
+
   input:
   path input_data  // Can be merged.osw (SQLite) or all_runs.oswpqd (parquet directory)
 
   output:
   path "${input_data}", emit: scored
+  path "*.log", emit: log
 
   // Note: PyProphet writes scores back into the same OSW by default.
   script:

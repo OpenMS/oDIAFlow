@@ -8,7 +8,7 @@ process OPENSWATHWORKFLOW {
         'ghcr.io/openswath/openswath:dev' }" // Temp use dev image which contains OpenMS develop branch for latests changes to the OpenSwathWorkflow
 
   publishDir "${params.outdir}/openswath/osw", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "*.osw"
-  publishDir "${params.outdir}/openswath/sqmass", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "*.sqMass"
+  publishDir "${params.outdir}/openswath/sqmass", mode: params.publish_dir_mode, enabled: params.save_sqmass, pattern: "*.sqMass"
   publishDir "${params.outdir}/logs/openms", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
 
   input:
