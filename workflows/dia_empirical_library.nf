@@ -193,11 +193,13 @@ workflow OPEN_SWATH_E2E {
         into a unified .oswpqd directory structure.
       */
       all_oswpq_dirs = PYPROPHET_EXPORT_PARQUET.out.oswpq.map{ it[1] }.collect()
-      merged_features = PYPROPHET_MERGE_OSWPQ(all_oswpq_dirs)
+      PYPROPHET_MERGE_OSWPQ(all_oswpq_dirs)
+      merged_features = PYPROPHET_MERGE_OSWPQ.out.merged_oswpqd
     } else {
       // For SQLite format, merge OSW files
       all_osw_files = per_run_osw.osw.collect()
-      merged_features = PYPROPHET_MERGE(all_osw_files, OPENSWATHDECOYGENERATOR.out.library)
+      PYPROPHET_MERGE(all_osw_files, OPENSWATHDECOYGENERATOR.out.library)
+      merged_features = PYPROPHET_MERGE.out.merged_osw
     }
 
     // 7) XIC alignment for across-run feature linking
