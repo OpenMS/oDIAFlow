@@ -157,10 +157,10 @@ workflow OPEN_SWATH_E2E {
     //    Collect all pickle files from all runs
     all_psmpkls = EASYPQP_CONVERTSAGE.out.psmpkl.map{ it[1] }.collect()
     all_peakpkls = EASYPQP_CONVERTSAGE.out.peakpkl.map{ it[1] }.collect()
-    transition_tsv = EASYPQP_LIBRARY(all_psmpkls, all_peakpkls)
+    EASYPQP_LIBRARY(all_psmpkls, all_peakpkls)
 
     // Generate assay library from transition TSV
-    pqp_library_targets = OPENSWATHASSAYGENERATOR(transition_tsv)
+    pqp_library_targets = OPENSWATHASSAYGENERATOR(EASYPQP_LIBRARY.out.library_tsv)
 
     // Generate decoys for the assay library
     pqp_library = OPENSWATHDECOYGENERATOR(pqp_library_targets)
