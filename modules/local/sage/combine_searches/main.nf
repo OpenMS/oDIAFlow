@@ -19,7 +19,7 @@ process SAGE_COMBINE_RESULTS {
 
   script:
   """
-  python3 <<'PY'
+    python3 <<'PY' 2>&1 | tee sage_combine_results.log
 import pandas as pd
 from datetime import datetime, timezone
 
@@ -92,6 +92,6 @@ print(f'Saved combined matched fragments to combined_matched_fragments.sage.tsv'
 
 print()
 print('Done!')
-PY 2>&1 | tee sage_combine_results.log
+PY
   """
 }
