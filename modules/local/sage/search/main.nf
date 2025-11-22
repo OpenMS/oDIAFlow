@@ -121,10 +121,11 @@ EOF
     mv matched_fragments.sage.tsv ${sample_id}_${search_type}_matched_fragments.sage.tsv
   fi
   if ls *.pin 1> /dev/null 2>&1; then
-    for f in *.pin; do mv "$f" "${sample_id}_${search_type}_$f"; done
+    for f in *.pin; do mv "\$f" "${sample_id}_${search_type}_\$f"; done
   fi
   if ls *.html 1> /dev/null 2>&1; then
-    for f in *.html; do mv "$f" "${sample_id}_${search_type}_$f"; done
+    for f in *.html; do mv "\$f" "${sample_id}_${search_type}_\$f"; done
+  fi
   fi
   if [ -f sage_search_${search_type}.log ]; then
     mv sage_search_${search_type}.log ${sample_id}_${search_type}_sage_search.log
