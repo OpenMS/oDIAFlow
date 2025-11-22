@@ -21,6 +21,10 @@ process SAGE_COMBINE_RESULTS {
   """
   python3 -c "
 import pandas as pd
+from datetime import datetime, timezone
+
+def now_iso():
+  return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
 # Combine PSM results
 print('Reading DDA results from ${dda_results}...')
@@ -38,6 +42,35 @@ print(f'Combined results: {len(combined_df)} rows')
 # Save combined results
 combined_df.to_csv('combined_results.sage.tsv', sep='\\t', index=False)
 print(f'Saved combined results to combined_results.sage.tsv')
+
+# Compute Sage-style summary counts at 1% FDR
+try:
+  # target PSMs at 1% (spectrum_q)
+  psm_count = int(combined_df[(combined_df.get('label') == 'target') & (combined_df.get('spectrum_q') <= 0.01)].shape[0])
+except Exception:
+  psm_count = 0
+
+try:
+  peptides = combined_df[(combined_df.get('label') == 'target') & (combined_df.get('peptide_q') <= 0.01)]['peptide'].dropna().unique()
+  peptide_count = int(len(peptides))
+except Exception:
+  peptide_count = 0
+
+try:
+  prot_rows = combined_df[(combined_df.get('label') == 'target') & (combined_df.get('protein_q') <= 0.01)]['proteins'].dropna()
+  proteins_set = set()
+  for s in prot_rows:
+    for p in str(s).split(';'):
+      p = p.strip()
+      if p:
+        proteins_set.add(p)
+  protein_count = int(len(proteins_set))
+except Exception:
+  protein_count = 0
+
+print(f"[{now_iso()} INFO  combined sage] discovered {psm_count} target peptide-spectrum matches at 1% FDR")
+print(f"[{now_iso()} INFO  combined sage] discovered {peptide_count} target peptides at 1% FDR")
+print(f"[{now_iso()} INFO  combined sage] discovered {protein_count} target proteins at 1% FDR")
 
 # Combine matched fragments
 print('\\nReading DDA matched fragments from ${dda_fragments}...')
