@@ -46,18 +46,18 @@ print(f'Saved combined results to combined_results.sage.tsv')
 # Compute Sage-style summary counts at 1% FDR
 try:
     # target PSMs at 1% (spectrum_q)
-    psm_count = int(combined_df[(combined_df.get('label') == 'target') & (combined_df.get('spectrum_q') <= 0.01)].shape[0])
+    psm_count = int(combined_df[(combined_df.get('label') == 1) & (combined_df.get('spectrum_q') <= 0.01)].shape[0])
 except Exception:
     psm_count = 0
 
 try:
-    peptides = combined_df[(combined_df.get('label') == 'target') & (combined_df.get('peptide_q') <= 0.01)]['peptide'].dropna().unique()
+    peptides = combined_df[(combined_df.get('label') == 1) & (combined_df.get('peptide_q') <= 0.01)]['peptide'].dropna().unique()
     peptide_count = int(len(peptides))
 except Exception:
     peptide_count = 0
 
 try:
-    prot_rows = combined_df[(combined_df.get('label') == 'target') & (combined_df.get('protein_q') <= 0.01)]['proteins'].dropna()
+    prot_rows = combined_df[(combined_df.get('label') == 1) & (combined_df.get('protein_q') <= 0.01)]['proteins'].dropna()
     proteins_set = set()
     for s in prot_rows:
         for p in str(s).split(';'):
