@@ -69,20 +69,25 @@ def getPublishSettings(subdirectory, enabled = true, saveFor = 'all') {
 workflow OPEN_SWATH_E2E {
 
     // 1) Gather inputs
-    // Collect all DDA files for a single Sage search
+    // Collect all DDA files for a single Sage search (if provided)
     // Handle .d directories (Bruker TDF) or regular files (mzML, mzML.gz)
-    if (params.dda_glob.endsWith('.d')) {
-        Channel
-          .fromPath(params.dda_glob, type: 'dir', checkIfExists: true)
-          .collect()
-          .map { files -> tuple("all_dda", files, "dda") }
-          .set { DDA_FOR_SEARCH }
+    if (params.dda_glob) {
+        if (params.dda_glob.endsWith('.d')) {
+            Channel
+              .fromPath(params.dda_glob, type: 'dir', checkIfExists: true)
+              .collect()
+              .map { files -> tuple("all_dda", files, "dda") }
+              .set { DDA_FOR_SEARCH }
+        } else {
+            Channel
+              .fromPath(params.dda_glob, checkIfExists: true)
+              .collect()
+              .map { files -> tuple("all_dda", files, "dda") }
+              .set { DDA_FOR_SEARCH }
+        }
     } else {
-        Channel
-          .fromPath(params.dda_glob, checkIfExists: true)
-          .collect()
-          .map { files -> tuple("all_dda", files, "dda") }
-          .set { DDA_FOR_SEARCH }
+        // No DDA files provided - create empty channel
+        Channel.empty().set { DDA_FOR_SEARCH }
     }
 
     // Optional: Collect DIA files for library building with Sage

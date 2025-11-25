@@ -27,11 +27,17 @@ workflow SAGE_EASYPQP_LIBRARY {
     fasta_ch
 
   main:
-    // Run SAGE on DDA files
-    dda_sage_results = SAGE_SEARCH_DDA(DDA_FOR_SEARCH, fasta_ch)
+    // Determine which searches to run based on available inputs
+    // DDA_FOR_SEARCH and DIA_FOR_SEARCH are channels that may be empty
+    
+    // Check if we have DDA files to search
+    has_dda = params.dda_glob ? true : false
+    // Check if we have DIA files for library building
+    has_dia_for_lib = params.sage.search_dia_for_lib && params.dia_for_lib_glob ? true : false
 
-    // Optionally run SAGE on DIA (for library building) and combine
-    if (params.sage.search_dia_for_lib && params.dia_for_lib_glob) {
+    if (has_dda && has_dia_for_lib) {
+      // Both DDA and DIA - run both searches and combine
+      dda_sage_results = SAGE_SEARCH_DDA(DDA_FOR_SEARCH, fasta_ch)
       dia_sage_results = SAGE_SEARCH_DIA(DIA_FOR_SEARCH, fasta_ch)
 
       combined_input = dda_sage_results.results
@@ -48,13 +54,25 @@ workflow SAGE_EASYPQP_LIBRARY {
 
       sage_combined_output = SAGE_COMBINE_RESULTS(combined_input)
       sage_combined = sage_combined_output.results.join(sage_combined_output.matched_fragments)
-    } else {
-      // Use only DDA results
+    } else if (has_dda) {
+      // Only DDA files - run DDA search only
+      dda_sage_results = SAGE_SEARCH_DDA(DDA_FOR_SEARCH, fasta_ch)
       sage_combined = dda_sage_results.results
         .map { sample_id, results_tsv, search_type -> tuple(sample_id, results_tsv) }
         .join(
           dda_sage_results.matched_fragments.map { sample_id, fragments_tsv, search_type -> tuple(sample_id, fragments_tsv) }
         )
+    } else if (has_dia_for_lib) {
+      // Only DIA files for library - run DIA search only
+      dia_sage_results = SAGE_SEARCH_DIA(DIA_FOR_SEARCH, fasta_ch)
+      sage_combined = dia_sage_results.results
+        .map { sample_id, results_tsv, search_type -> tuple(sample_id, results_tsv) }
+        .join(
+          dia_sage_results.matched_fragments.map { sample_id, fragments_tsv, search_type -> tuple(sample_id, fragments_tsv) }
+        )
+    } else {
+      // No files provided - this is an error condition
+      error "No DDA or DIA files provided for library building. Please specify dda_glob or dia_for_lib_glob."
     }
 
     // Convert SAGE -> EasyPQP pickle format and build library
