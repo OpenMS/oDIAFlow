@@ -89,7 +89,7 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
     }
 
   emit:
-    per_run_osw = per_run.out.osw
+    per_run_osw = per_run.osw
     decoyed_library = pqp_library_decoyed.out.library
     library = pqp_library.out.library
 }
@@ -138,6 +138,6 @@ workflow ASSAY_DECOY_FROM_PQP {
     }
 
   emit:
-    per_run_osw = per_run.out.osw
+    per_run_osw = per_run.osw
     decoyed_library = pqp_library_decoyed.out.library
 }
