@@ -1,0 +1,42 @@
+name: assay_decoy_extraction
+description: Subworkflow that builds assay libraries (from transition lists or PQP), generates decoys and runs OpenSwath extraction per-DIA run. Supports per-run iRTs produced by EasyPQP.
+keywords:
+  - OpenSWATH
+  - DIA
+  - assay
+  - decoy
+  - extraction
+input:
+  - DIA_MZML:
+      type: channel
+      description: Channel of DIA mzML files. Expected shape: either a channel of paths or tuples (run_id, path). Files will be joined by run_id to per-run iRTs when provided.
+  - transition_tsv:
+      type: file
+      description: Transition TSV / predicted library file used to generate the primary PQP via OpenSwathAssayGenerator.
+      pattern: "*.tsv"
+  - irt_traml_ch:
+      type: channel
+      description: Optional channel containing linear iRT inputs (TraML or PQP) to use globally when per-run iRTs are not provided.
+  - irt_nonlinear_traml_ch:
+      type: channel
+      description: Optional channel containing nonlinear iRT inputs (TraML or PQP) to use globally when per-run iRTs are not provided.
+  - run_peaks_ch:
+      type: channel
+      description: Optional channel containing per-run EasyPQP *_run_peaks.tsv files. When provided, the subworkflow will convert these to per-run PQPs (assay) and reduced PQPs (linear iRT) and use them for per-run calibration.
+  - swath_windows_ch:
+      type: channel
+      description: Optional swath windows file channel passed through to OpenSwathWorkflow.
+output:
+  - per_run_osw:
+      type: channel
+      description: Composite channel of per-run OpenSwathWorkflow outputs (osw, sqMass, debug files).
+  - decoyed_library:
+      type: file
+      description: Decoyed PQP/library produced by the decoy generator.
+      pattern: "library_targets.*"
+  - library:
+      type: file
+      description: PQP/library file produced from the transition_tsv by OpenSwathAssayGenerator (when applicable).
+      pattern: "library_targets.*"
+authors:
+  - "@singjc"

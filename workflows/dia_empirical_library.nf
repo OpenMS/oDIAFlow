@@ -24,6 +24,9 @@ include { PYPROPHET_CALIBRATION_REPORT }   from '../modules/local/pyprophet/cali
 include { PYPROPHET_ALIGNMENT_SCORING }    from '../modules/local/pyprophet/alignment_scoring/main.nf'
 include { PYPROPHET_OSW_FULL }             from '../subworkflows/local/pyprophet_osw/main.nf'
 include { PYPROPHET_PARQUET_FULL }         from '../subworkflows/local/pyprophet_parquet/main.nf'
+include { ASSAY_DECOY_FROM_TRANSITION, ASSAY_DECOY_FROM_PQP } from '../subworkflows/local/assay_decoy_extraction/main.nf'
+include { MERGE_ALIGN_SCORE } from '../subworkflows/local/merge_align_score/main.nf'
+include { SAGE_EASYPQP_LIBRARY } from '../subworkflows/local/sage_easypqp_library/main.nf'
 
 //
 // SUBWORKFLOWS: Consisting of a mix of local and nf-core/modules
@@ -110,6 +113,7 @@ workflow OPEN_SWATH_E2E {
     } else {
         Channel
             .fromList(file(params.dia_glob))
+            .map { it -> tuple(it.baseName, it) }
             .set { DIA_MZML }
     }
 
@@ -118,105 +122,32 @@ workflow OPEN_SWATH_E2E {
     irt_nonlinear_traml_ch = params.irt_nonlinear_traml ? Channel.value(file(params.irt_nonlinear_traml)) : Channel.value([])
     swath_windows_ch = params.swath_windows ? Channel.value(file(params.swath_windows)) : Channel.value([])
 
-    // 2) DDA and optional DIA search with SAGE → results TSV + matched fragments TSV
-    // Sage searches all DDA files together
-    dda_sage_results = SAGE_SEARCH(DDA_FOR_SEARCH, fasta_ch)
+    // 2-4) Run SAGE (DDA +/- DIA), convert to EasyPQP pickles and build transition TSV/PQP
+    sage_lib = SAGE_EASYPQP_LIBRARY(DDA_FOR_SEARCH, DIA_FOR_SEARCH, fasta_ch)
 
-    // If searching DIA for library, run Sage on DIA files too
-    if (params.sage.search_dia_for_lib && params.dia_for_lib_glob) {
-        dia_sage_results = SAGE_SEARCH_DIA(DIA_FOR_SEARCH, fasta_ch)
-        
-        // Combine DDA and DIA results
-        combined_input = dda_sage_results.results
-          .map { sample_id, results_tsv, search_type -> tuple("combined", results_tsv) }
-          .join(
-            dia_sage_results.results.map { sample_id, results_tsv, search_type -> tuple("combined", results_tsv) }
-          )
-          .join(
-            dda_sage_results.matched_fragments.map { sample_id, fragments_tsv, search_type -> tuple("combined", fragments_tsv) }
-          )
-          .join(
-            dia_sage_results.matched_fragments.map { sample_id, fragments_tsv, search_type -> tuple("combined", fragments_tsv) }
-          )
-        
-        sage_combined_output = SAGE_COMBINE_RESULTS(combined_input)
-        sage_combined = sage_combined_output.results.join(sage_combined_output.matched_fragments)
-    } else {
-        // Use only DDA results
-        sage_combined = dda_sage_results.results
-          .map { sample_id, results_tsv, search_type -> tuple(sample_id, results_tsv) }
-          .join(
-            dda_sage_results.matched_fragments.map { sample_id, fragments_tsv, search_type -> tuple(sample_id, fragments_tsv) }
-          )
-    }
+    // sage_lib.library_tsv is the transition TSV produced by EasyPQP_LIBRARY
 
-    // 3) Convert SAGE → EasyPQP pickle format
-    EASYPQP_CONVERTSAGE(sage_combined)
+    // Use subworkflow to create decoyed PQP and run extraction (pass per-run run_peaks for run-specific iRTs)
+    assay_out = ASSAY_DECOY_FROM_TRANSITION(DIA_MZML, sage_lib.library_tsv, irt_traml_ch, irt_nonlinear_traml_ch, sage_lib.run_peaks, swath_windows_ch)
 
-    // 4) Build spectral library (PQP) with EasyPQP
-    //    Collect all pickle files from all runs
-    all_psmpkls = EASYPQP_CONVERTSAGE.out.psmpkl.map{ it[1] }.collect()
-    all_peakpkls = EASYPQP_CONVERTSAGE.out.peakpkl.map{ it[1] }.collect()
-    EASYPQP_LIBRARY(all_psmpkls, all_peakpkls)
+    per_run_osw = assay_out.per_run_osw
+    decoy_library = assay_out.decoyed_library
 
-    // Generate assay library from transition TSV
-    OPENSWATHASSAYGENERATOR(EASYPQP_LIBRARY.out.library_tsv)
-
-    // Generate decoys for the assay library
-    OPENSWATHDECOYGENERATOR(OPENSWATHASSAYGENERATOR.out.library)
-
-    // 5) OpenSwathWorkflow extraction per DIA mzML → per-run .osw + .sqMass (XICs)
-    per_run_osw = OPENSWATHWORKFLOW(DIA_MZML, OPENSWATHDECOYGENERATOR.out.library, irt_traml_ch, irt_nonlinear_traml_ch, swath_windows_ch)
-    
     // Collect XIC files (.sqMass) for alignment
     xic_files = per_run_osw.chrom_mzml.collect()
-    
+
     // Collect debug calibration files for calibration report
     all_debug_files = per_run_osw.irt_trafo
       .mix(per_run_osw.irt_chrom, per_run_osw.debug_mz, per_run_osw.debug_im)
       .collect()
-    
+
     // Generate calibration report from debug files
     calibration_report = PYPROPHET_CALIBRATION_REPORT(all_debug_files)
 
-    // 6) Merge OSW files BEFORE alignment
-    // Optional: use parquet format for PyProphet processing
-    if (params.use_parquet) {
-      /*
-        Convert each OSW to parquet directory (.oswpq).
-        per_run_osw.osw is a channel of paths
-      */
-      PYPROPHET_EXPORT_PARQUET(per_run_osw.osw.map { osw -> tuple(osw.baseName, osw) })
-      
-      /*
-        Collect all .oswpq directories into a single list and merge them
-        into a unified .oswpqd directory structure.
-      */
-      all_oswpq_dirs = PYPROPHET_EXPORT_PARQUET.out.oswpq.map{ it[1] }.collect()
-      PYPROPHET_MERGE_OSWPQ(all_oswpq_dirs)
-      merged_features = PYPROPHET_MERGE_OSWPQ.out.merged_oswpqd
-    } else {
-      // For SQLite format, merge OSW files
-      all_osw_files = per_run_osw.osw.collect()
-      PYPROPHET_MERGE(all_osw_files, OPENSWATHDECOYGENERATOR.out.library)
-      merged_features = PYPROPHET_MERGE.out.merged_osw
-    }
-
-    // 7) XIC alignment for across-run feature linking
-    // ARYCAL expects: xic_files (.sqMass) and merged features (osw or oswpqd)
-    arycal_output = ARYCAL(xic_files, merged_features)
-
-    // Score aligned features
-    PYPROPHET_ALIGNMENT_SCORING(arycal_output.aligned_features)
-
-    // 8) PyProphet scoring on aligned features (score → infer peptide/protein)
-    if (params.use_parquet) {
-      pyprophet_output = PYPROPHET_PARQUET_FULL(PYPROPHET_ALIGNMENT_SCORING.out.scored, OPENSWATHDECOYGENERATOR.out.library)
-      final_tsv = pyprophet_output.results_tsv
-    } else {
-      pyprophet_output = PYPROPHET_OSW_FULL(PYPROPHET_ALIGNMENT_SCORING.out.scored, OPENSWATHDECOYGENERATOR.out.library)
-      final_tsv = pyprophet_output.results_tsv
-    }
+    // 5) Merge, align and score using shared subworkflow
+    merge_out = MERGE_ALIGN_SCORE(per_run_osw, decoy_library)
+    merged_features = merge_out.merged_features
+    final_tsv = merge_out.results_tsv
 
     // emit final TSV
     final_tsv.view { "Finished: ${it}" }

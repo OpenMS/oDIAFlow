@@ -1,0 +1,26 @@
+name: merge_align_score
+description: Subworkflow that merges per-run OSW files (or parquet), performs XIC alignment (ARYCAL), alignment scoring and final PyProphet full scoring (OSW or parquet flow).
+keywords:
+  - pyprophet
+  - ar ycal
+  - alignment
+  - merge
+input:
+  - per_run_osw:
+      type: channel
+      description: Composite channel produced by OPENSWATHWORKFLOW containing per-run osw, sqMass and debug files.
+  - decoyed_library:
+      type: file
+      description: Decoyed PQP/library file used for merging and PyProphet scoring.
+      pattern: "library_targets.*"
+output:
+  - merged_features:
+      type: file
+      description: Merged features (either merged OSW or merged oswpqd depending on params.use_parquet).
+      pattern: "merged*"
+  - results_tsv:
+      type: file
+      description: Final PyProphet scored results TSV emitted by the PyProphet full subworkflow.
+      pattern: "*.tsv"
+authors:
+  - "@singjc"
