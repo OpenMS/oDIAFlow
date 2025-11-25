@@ -14,9 +14,9 @@ process OPENSWATHWORKFLOW {
   input:
   path dia_mzml
   path pqp
-  path irt_traml optional true
-  path irt_nonlinear_traml optional true
-  val use_auto_irt_override optional true
+  path irt_traml, optional: true
+  path irt_nonlinear_traml, optional: true
+  val use_auto_irt_override, optional: true
   path swath_windows
 
   output:
