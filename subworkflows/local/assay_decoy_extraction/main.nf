@@ -44,6 +44,7 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
     // Normalize DIA_MZML to always be tuple(run_id, path)
     // The input may already be a tuple (run_id, path) from the calling workflow
     // baseName strips the last extension (.mzML, .d, etc.)
+    // For .mzML.gz files, we need to strip both extensions
     dia_normalized = DIA_MZML.map { item ->
         if (item instanceof List || item instanceof ArrayList) {
             // Already a tuple: (run_id, path) - pass through
@@ -52,7 +53,11 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
             return tuple(run_id, file_path)
         } else {
             // Plain path, extract run_id from baseName
-            return tuple(item.baseName.toString(), item)
+            // Handle double extensions like .mzML.gz by stripping multiple times if needed
+            def base = item.baseName.toString()
+            // Strip common MS file extensions that might remain after baseName
+            base = base.replaceAll(/\.(mzML|mzXML|raw|wiff|d)$/i, '')
+            return tuple(base, item)
         }
     }
 
