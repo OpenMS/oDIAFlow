@@ -35,26 +35,26 @@ workflow MERGE_ALIGN_SCORE {
       PYPROPHET_EXPORT_PARQUET(osw_files.map { osw -> tuple(osw.baseName, osw) })
 
       all_oswpq_dirs = PYPROPHET_EXPORT_PARQUET.out.oswpq.map{ it[1] }.collect()
-      merged = PYPROPHET_MERGE_OSWPQ(all_oswpq_dirs)
-      merged_features = merged.out.merged_oswpqd
+      PYPROPHET_MERGE_OSWPQ(all_oswpq_dirs)
+      merged_features = PYPROPHET_MERGE_OSWPQ.out.merged_oswpqd
     } else {
       all_osw_files = osw_files.collect()
-      merged = PYPROPHET_MERGE(all_osw_files, decoyed_library)
-      merged_features = merged.out.merged_osw
+      PYPROPHET_MERGE(all_osw_files, decoyed_library)
+      merged_features = PYPROPHET_MERGE.out.merged_osw
     }
 
     // XIC alignment for across-run feature linking
-    arycal_output = ARYCAL(xic_files, merged_features)
+    ARYCAL(xic_files, merged_features)
 
     // Score aligned features
-    scored_alignment = PYPROPHET_ALIGNMENT_SCORING(arycal_output.aligned_features)
+    PYPROPHET_ALIGNMENT_SCORING(ARYCAL.out.aligned_features)
 
     // Final PyProphet scoring (parquet or osw flow)
     if (params.use_parquet) {
-      pyprophet_final = PYPROPHET_PARQUET_FULL(scored_alignment.scored, decoyed_library)
+      pyprophet_final = PYPROPHET_PARQUET_FULL(PYPROPHET_ALIGNMENT_SCORING.out.scored, decoyed_library)
       final_tsv = pyprophet_final.results_tsv
     } else {
-      pyprophet_final = PYPROPHET_OSW_FULL(scored_alignment.scored, decoyed_library)
+      pyprophet_final = PYPROPHET_OSW_FULL(PYPROPHET_ALIGNMENT_SCORING.out.scored, decoyed_library)
       final_tsv = pyprophet_final.results_tsv
     }
 
