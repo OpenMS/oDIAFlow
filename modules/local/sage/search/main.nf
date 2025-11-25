@@ -45,7 +45,7 @@ process SAGE_SEARCH {
         "min_len": ${params.sage.min_len ?: 'null'},
         "max_len": ${params.sage.max_len ?: 'null'},
         "cleave_at": "${params.sage.cleave_at ?: 'KR'}",
-        "restrict": ${params.sage.restrict ?: 'null'},
+        "restrict": ${params.sage.restrict ? '"' + params.sage.restrict + '"' : 'null'},
         "c_terminal": ${params.sage.c_terminal ?: 'null'},
         "semi_enzymatic": ${params.sage.semi_enzymatic ?: 'null'}
       },
