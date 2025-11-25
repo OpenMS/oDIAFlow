@@ -1,20 +1,20 @@
-process OPENSWATHASSAYGENERATOR {
-  tag "openswathassaygenerator"
+process OPENSWATHASSAYGENERATOR_NAMED {
+  tag { "openswathassaygenerator_${run_id}" }
   label 'process_medium'
   label 'openms'
 
   container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
-        'ghcr.io/openswath/openswath:dev' }" // Temp use dev image which contains OpenMS develop branch for latests changes to the OpenSwathWorkflow
+        'ghcr.io/openswath/openswath:dev' }"
 
   publishDir "${params.outdir}/library", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "library_targets.${params.osag.out_type}"
   publishDir "${params.outdir}/logs/openms", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
 
   input:
-  path transition_list
+  tuple val(run_id), path transition_list
 
   output:
-  path "library_targets.${params.osag.out_type}", emit: library
+  tuple val(run_id), path "library_targets.${params.osag.out_type}", emit: run_library
   path "*.log", emit: log
 
   script:
@@ -30,8 +30,6 @@ process OPENSWATHASSAYGENERATOR {
     -allowed_fragment_charges ${params.osag.allowed_fragment_charges} \\
     -debug ${params.osag.debug} \\
     ${args} \\
-  2>&1 | tee openswathassaygenerator.log
-  """
-}
+  2>&1 | tee openswathassaygenerator_${run_id}.log
   """
 }

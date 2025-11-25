@@ -11,7 +11,8 @@
     - library: the pqp produced from transition (when applicable)
 */
 
-include { OPENSWATHASSAYGENERATOR, OPENSWATHASSAYGENERATOR_NAMED } from '../../../modules/local/openms/openswathassaygenerator/main.nf'
+include { OPENSWATHASSAYGENERATOR } from '../../../modules/local/openms/openswathassaygenerator/main.nf'
+include { OPENSWATHASSAYGENERATOR_NAMED } from '../../../modules/local/openms/openswathassaygenerator/named/main.nf'
 include { OPENSWATHDECOYGENERATOR } from '../../../modules/local/openms/openswathdecoygenerator/main.nf'
 include { OPENSWATHWORKFLOW } from '../../../modules/local/openms/openswathworkflow/main.nf'
 include { EASYPQP_REDUCE } from '../../../modules/local/easypqp/reduce/main.nf'
