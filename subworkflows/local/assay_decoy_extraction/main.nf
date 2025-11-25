@@ -56,7 +56,7 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
             // Handle double extensions like .mzML.gz by stripping multiple times if needed
             def base = item.baseName.toString()
             // Strip common MS file extensions that might remain after baseName
-            base = base.replaceAll(/\.(mzML|mzXML|raw|wiff|d)$/i, '')
+            base = base.replaceAll(/(?i)\.(mzML|mzXML|raw|wiff|d)$/, '')
             return tuple(base, item)
         }
     }

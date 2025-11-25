@@ -118,7 +118,7 @@ workflow OPEN_SWATH_E2E {
           .map { path -> 
               def base = path.baseName.toString()
               // Strip common MS file extensions that might remain after baseName
-              base = base.replaceAll(/\.(mzML|mzXML|raw|wiff|d)$/i, '')
+              base = base.replaceAll(/(?i)\.(mzML|mzXML|raw|wiff|d)$/, '')
               tuple(base, path)
           }
           .set { DIA_MZML }
@@ -128,7 +128,7 @@ workflow OPEN_SWATH_E2E {
             .map { path -> 
                 def base = path.baseName.toString()
                 // Strip common MS file extensions that might remain after baseName
-                base = base.replaceAll(/\.(mzML|mzXML|raw|wiff|d)$/i, '')
+                base = base.replaceAll(/(?i)\.(mzML|mzXML|raw|wiff|d)$/, '')
                 tuple(base, path)
             }
             .set { DIA_MZML }
