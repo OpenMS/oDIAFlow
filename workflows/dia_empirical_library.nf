@@ -111,24 +111,26 @@ workflow OPEN_SWATH_E2E {
     }
 
     // DIA files for extraction (separate from DIA for library)
-    // Helper closure to extract clean run_id from filename
     // Handles double extensions like .mzML.gz by stripping both
-    def getRunId = { path ->
-        def base = path.baseName.toString()
-        // Strip common MS file extensions that might remain after baseName
-        base = base.replaceAll(/\.(mzML|mzXML|raw|wiff|d)$/i, '')
-        return base
-    }
-    
     if (params.dia_glob.endsWith('.d')) {
         Channel
           .fromPath(params.dia_glob, type: 'dir', checkIfExists: true)
-          .map { it -> tuple(getRunId(it), it) }
+          .map { path -> 
+              def base = path.baseName.toString()
+              // Strip common MS file extensions that might remain after baseName
+              base = base.replaceAll(/\.(mzML|mzXML|raw|wiff|d)$/i, '')
+              tuple(base, path)
+          }
           .set { DIA_MZML }
     } else {
         Channel
             .fromList(file(params.dia_glob))
-            .map { it -> tuple(getRunId(it), it) }
+            .map { path -> 
+                def base = path.baseName.toString()
+                // Strip common MS file extensions that might remain after baseName
+                base = base.replaceAll(/\.(mzML|mzXML|raw|wiff|d)$/i, '')
+                tuple(base, path)
+            }
             .set { DIA_MZML }
     }
 
