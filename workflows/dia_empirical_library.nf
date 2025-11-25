@@ -135,11 +135,11 @@ workflow OPEN_SWATH_E2E {
     decoy_library = assay_out.decoyed_library
 
     // Collect XIC files (.sqMass) for alignment
-    xic_files = per_run_osw.chrom_mzml.collect()
+    xic_files = assay_out.chrom_mzml.collect()
 
     // Collect debug calibration files for calibration report
-    all_debug_files = per_run_osw.irt_trafo
-      .mix(per_run_osw.irt_chrom, per_run_osw.debug_mz, per_run_osw.debug_im)
+    all_debug_files = assay_out.irt_trafo
+      .mix(assay_out.irt_chrom, assay_out.debug_mz, assay_out.debug_im)
       .collect()
 
     // Generate calibration report from debug files

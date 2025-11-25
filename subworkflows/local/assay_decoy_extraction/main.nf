@@ -90,6 +90,11 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
 
   emit:
     per_run_osw = per_run.osw
+    chrom_mzml = per_run.chrom_mzml
+    irt_trafo = per_run.irt_trafo
+    irt_chrom = per_run.irt_chrom
+    debug_mz = per_run.debug_mz
+    debug_im = per_run.debug_im
     decoyed_library = pqp_library_decoyed.out.library
     library = pqp_library.out.library
 }
@@ -139,5 +144,10 @@ workflow ASSAY_DECOY_FROM_PQP {
 
   emit:
     per_run_osw = per_run.osw
+    chrom_mzml = per_run.chrom_mzml
+    irt_trafo = per_run.irt_trafo
+    irt_chrom = per_run.irt_chrom
+    debug_mz = per_run.debug_mz
+    debug_im = per_run.debug_im
     decoyed_library = pqp_library_decoyed.out.library
 }
