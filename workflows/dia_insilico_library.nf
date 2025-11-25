@@ -58,24 +58,24 @@ workflow OPEN_SWATH_INSILICO_LIBRARY {
     swath_windows_ch = params.swath_windows ? Channel.value(file(params.swath_windows)) : Channel.value([])
 
     // 2-4) Create assay/decoy and run extraction via subworkflow
-    assay_out = ASSAY_DECOY_FROM_TRANSITION(DIA_MZML, transition_tsv_ch, irt_traml_ch, irt_nonlinear_traml_ch, swath_windows_ch)
+    assay_out = ASSAY_DECOY_FROM_TRANSITION(DIA_MZML, transition_tsv_ch, irt_traml_ch, irt_nonlinear_traml_ch, Channel.empty(), swath_windows_ch)
 
     per_run_osw = assay_out.per_run_osw
     decoy_library = assay_out.decoyed_library
 
     // Collect XIC files (.sqMass) for alignment
-    xic_files = per_run_osw.chrom_mzml.collect()
+    xic_files = assay_out.chrom_mzml.collect()
 
     // Collect debug calibration files for calibration report
-    all_debug_files = per_run_osw.irt_trafo
-      .mix(per_run_osw.irt_chrom, per_run_osw.debug_mz, per_run_osw.debug_im)
+    all_debug_files = assay_out.irt_trafo
+      .mix(assay_out.irt_chrom, assay_out.debug_mz, assay_out.debug_im)
       .collect()
     
     // Generate calibration report from debug files
     calibration_report = PYPROPHET_CALIBRATION_REPORT(all_debug_files)
 
     // 5-7) Merge, align and score using shared subworkflow
-    merge_out = MERGE_ALIGN_SCORE(per_run_osw, decoy_library)
+    merge_out = MERGE_ALIGN_SCORE(per_run_osw, assay_out.chrom_mzml, decoy_library)
     final_tsv = merge_out.results_tsv
 
     // emit final TSV

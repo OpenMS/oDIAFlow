@@ -2,7 +2,8 @@
   Subworkflow to merge per-run OSW, perform ARYCAL alignment and PyProphet scoring.
 
   Inputs:
-    - per_run_osw : channel returned by OPENSWATHWORKFLOW (composite with .osw, .chrom_mzml, .irt_trafo, .irt_chrom, .debug_mz, .debug_im)
+    - osw_files : channel of per-run OSW files
+    - chrom_mzml_files : channel of per-run sqMass/chrom files
     - decoyed_library : PQP/library file produced by decoy generator
 
   Emits:
@@ -21,27 +22,23 @@ include { PYPROPHET_PARQUET_FULL }      from '../../../subworkflows/local/pyprop
 workflow MERGE_ALIGN_SCORE {
 
   take:
-    per_run_osw
+    osw_files
+    chrom_mzml_files
     decoyed_library
 
   main:
     // Collect XIC files (.sqMass)
-    xic_files = per_run_osw.chrom_mzml.collect()
-
-    // Collect debug calibration files for calibration report (if needed elsewhere)
-    all_debug_files = per_run_osw.irt_trafo
-      .mix(per_run_osw.irt_chrom, per_run_osw.debug_mz, per_run_osw.debug_im)
-      .collect()
+    xic_files = chrom_mzml_files.collect()
 
     // Merge OSW files BEFORE alignment
     if (params.use_parquet) {
-      PYPROPHET_EXPORT_PARQUET(per_run_osw.osw.map { osw -> tuple(osw.baseName, osw) })
+      PYPROPHET_EXPORT_PARQUET(osw_files.map { osw -> tuple(osw.baseName, osw) })
 
       all_oswpq_dirs = PYPROPHET_EXPORT_PARQUET.out.oswpq.map{ it[1] }.collect()
       merged = PYPROPHET_MERGE_OSWPQ(all_oswpq_dirs)
       merged_features = merged.out.merged_oswpqd
     } else {
-      all_osw_files = per_run_osw.osw.collect()
+      all_osw_files = osw_files.collect()
       merged = PYPROPHET_MERGE(all_osw_files, decoyed_library)
       merged_features = merged.out.merged_osw
     }

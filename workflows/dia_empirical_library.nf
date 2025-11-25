@@ -146,7 +146,7 @@ workflow OPEN_SWATH_E2E {
     calibration_report = PYPROPHET_CALIBRATION_REPORT(all_debug_files)
 
     // 5) Merge, align and score using shared subworkflow
-    merge_out = MERGE_ALIGN_SCORE(per_run_osw, decoy_library)
+    merge_out = MERGE_ALIGN_SCORE(per_run_osw, assay_out.chrom_mzml, decoy_library)
     merged_features = merge_out.merged_features
     final_tsv = merge_out.results_tsv
 
