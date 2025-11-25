@@ -134,10 +134,38 @@ nextflow run main.nf \
 
 ## Configuration
 
-Edit `nextflow.config` to adjust:
-- Tool-specific parameters (Sage, PyProphet, OpenSWATH, etc.)
-- Computational resources
-- Container settings
+### Structure
+
+```bash
+conf/
+├── base.config           # Resource labels (process_low, process_medium, etc.) 
+├── modules.config        # Process-specific: ext.args, publishDir, containerOptions
+├── profiles.config       # Execution profiles: docker, singularity, slurm, pbs, cloud
+├── example_user.config   # Template for users to copy and customize
+├── resources/
+│   ├── local.config      # Resources for local/workstation execution
+│   └── hpc.config        # Resources for HPC cluster execution
+└── test/
+    └── test.config       # Minimal test dataset configuration
+
+nextflow.config           # Main config: params defaults + includes all sub-configs
+```
+
+### Examples
+
+```bash
+# Local development with Docker
+nextflow run main.nf -profile docker,local --dia_glob "data/*.mzML" ...
+
+# HPC with Singularity and SLURM
+nextflow run main.nf -profile singularity,slurm --dia_glob "data/*.mzML" ...
+
+# Test run
+nextflow run main.nf -profile docker,test
+
+# Custom user config
+nextflow run main.nf -profile docker,local -c my_analysis.config
+```
 
 ## Architecture
 
