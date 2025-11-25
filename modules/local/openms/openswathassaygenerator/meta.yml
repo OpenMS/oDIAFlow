@@ -20,6 +20,10 @@ output:
       type: file
       description: PQP (PeptideQueryParameter) assay/library file produced by OpenSwathAssayGenerator.
       pattern: "library_targets.*"
+  - run_library:
+    type: file
+    description: Per-run PQP library produced when calling the named variant `OPENSWATHASSAYGENERATOR_NAMED` which emits (run_id, library_targets.*).
+    pattern: "library_targets.*"
   - versions:
       type: file
       description: Software version manifest produced by the process.
