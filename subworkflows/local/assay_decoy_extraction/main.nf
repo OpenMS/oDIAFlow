@@ -6,7 +6,12 @@
     - ASSAY_DECOY_FROM_PQP: takes an existing PQP/library file, runs decoy -> OpenSwathWorkflow
 
   Emits:
-    - per_run_osw: composite channel returned by OPENSWATHWORKFLOW
+    - per_run_osw: OSW files from OPENSWATHWORKFLOW
+    - chrom_mzml: sqMass chromatogram files
+    - irt_trafo: iRT transformation files
+    - irt_chrom: iRT chromatogram files
+    - debug_mz: Debug m/z files
+    - debug_im: Debug ion mobility files
     - decoyed_library: the decoyed PQP/library file
     - library: the pqp produced from transition (when applicable)
 */
@@ -20,12 +25,12 @@ include { EASYPQP_REDUCE } from '../../../modules/local/easypqp/reduce/main.nf'
 workflow ASSAY_DECOY_FROM_TRANSITION {
 
   take:
-    DIA_MZML
-    transition_tsv
-    irt_traml_ch
-    irt_nonlinear_traml_ch
-    run_peaks_ch
-    swath_windows_ch
+    DIA_MZML           // Channel of DIA files: either path or tuple(run_id, path)
+    transition_tsv     // Transition TSV from EasyPQP
+    irt_traml_ch       // Optional iRT TraML (Channel.value or empty)
+    irt_nonlinear_traml_ch  // Optional nonlinear iRT TraML
+    run_peaks_ch       // Channel of *_run_peaks.tsv files from EasyPQP convert
+    swath_windows_ch   // Optional SWATH windows file
 
   main:
     // Generate PQP/library from transition TSV
@@ -36,57 +41,104 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
     OPENSWATHDECOYGENERATOR(pqp_library_ch)
     pqp_library_decoyed_ch = OPENSWATHDECOYGENERATOR.out.library
 
-  // Decide iRT strategy using precedence:
-  // 1) params.use_runspecific_irts and run_peaks available -> per-run iRT PQPs
-  // 2) params.irt_traml set -> use provided irt_traml for all runs
-  // 3) params.use_auto_irts -> let OpenSwathWorkflow sample the PQP (auto_irt)
-  def use_run_specific = params.use_runspecific_irts && (run_peaks_ch && !run_peaks_ch.empty)
-
-  if (use_run_specific) {
-        // run_peaks_ch elements are paths like <run>_run_peaks.tsv; map to (run_id, path)
-        named_run_peaks = run_peaks_ch.map { peaks -> tuple(peaks.baseName.replaceAll(/_run_peaks$/, ''), peaks) }
-
-        // Convert each run peaks TSV into a per-run PQP by calling the named OPENSWATHASSAYGENERATOR
-        per_run_pqps = OPENSWATHASSAYGENERATOR_NAMED(named_run_peaks)
-
-  // Create linear iRT PQPs from per-run full PQPs using easypqp reduce
-  per_run_linear = EASYPQP_REDUCE(per_run_pqps)
-
-        // Join full PQP and reduced PQP by run id to get tuples (run_id, full_pqp, linear_pqp)
-        // per_run_pqps and per_run_linear are both channels of tuple(run_id, path)
-        full_map = per_run_pqps.map { run_id, pqp -> tuple(run_id, pqp) }
-        linear_map = per_run_linear.map { run_id, pqp -> tuple(run_id, pqp) }
-
-        joined_pqps = full_map.join(linear_map).map { id, full, linear -> tuple(id, full[1], linear[1]) }
-
-        // Ensure DIA_MZML is a channel of tuples (run_id, mzml_path)
-        named_dia = DIA_MZML.map { d -> d instanceof Tuple ? d : tuple(d.baseName, d) }
-
-        // Join DIA mzMLs with per-run PQPs by run id
-        paired = named_dia.join(joined_pqps)
-
-        // Create channels aligned for OPENSWATHWORKFLOW: dia_files, linear iRT pqps, nonlinear (full) iRT pqps
-        dia_files = paired.map { run_id, mzml, pqp_trip -> mzml }
-        per_run_linear_pqps = paired.map { run_id, mzml, pqp_trip -> pqp_trip[2] }
-        per_run_full_pqps = paired.map { run_id, mzml, pqp_trip -> pqp_trip[1] }
-
-        // Run OpenSwathWorkflow per run, providing per-run linear and nonlinear iRT PQPs
-        // Pass use_auto_irt_override=false to prevent OpenSwath from auto-sampling when explicit iRTs are provided
-        per_run = OPENSWATHWORKFLOW(dia_files, pqp_library_decoyed_ch, per_run_linear_pqps, per_run_full_pqps, swath_windows_ch, Channel.value(false))
-    } else {
-        // Run extraction using global settings. Choose between explicit irt_traml, or auto_irt based on params.
-        if (params.irt_traml) {
-          // Use provided irt_traml for all runs and disable auto_irt
-          per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed_ch, irt_traml_ch, irt_nonlinear_traml_ch, swath_windows_ch, Channel.value(false))
-        } else if (params.use_auto_irts) {
-          // Let OpenSwathWorkflow sample the provided PQP (enable auto_irt)
-          // Pass placeholder files for irt inputs and set use_auto_irt_override=true
-          no_irt_ch = Channel.value(file('NO_IRT_FILE'))
-          per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed_ch, no_irt_ch, no_irt_ch, swath_windows_ch, Channel.value(true))
+    // Normalize DIA_MZML to always be tuple(run_id, path)
+    // The input may already be a tuple (run_id, path) from the calling workflow
+    // baseName strips the last extension (.mzML, .d, etc.)
+    dia_normalized = DIA_MZML.map { item ->
+        if (item instanceof List || item instanceof ArrayList) {
+            // Already a tuple: (run_id, path) - pass through
+            def run_id = item[0].toString()
+            def file_path = item[1]
+            return tuple(run_id, file_path)
         } else {
-          // Default: no iRT supplied, disable auto_irt
-          no_irt_ch = Channel.value(file('NO_IRT_FILE'))
-          per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed_ch, no_irt_ch, no_irt_ch, swath_windows_ch, Channel.value(false))
+            // Plain path, extract run_id from baseName
+            return tuple(item.baseName.toString(), item)
+        }
+    }
+    
+    // DEBUG: Show normalized DIA files
+    dia_normalized.view { "[DEBUG] DIA normalized: run_id='${it[0]}', file=${it[1]}" }
+
+    // Decide iRT strategy based on params
+    if (params.use_runspecific_irts) {
+        // Try to use per-run iRTs from run_peaks files
+        // run_peaks files are named like <run>_run_peaks.tsv
+        // Extract run_id by removing the _run_peaks suffix
+        named_run_peaks = run_peaks_ch.map { peaks -> 
+            def run_id = peaks.baseName.replaceAll(/_run_peaks$/, '')
+            return tuple(run_id.toString(), peaks)
+        }
+        
+        // DEBUG: Show named run_peaks
+        named_run_peaks.view { "[DEBUG] run_peaks: run_id='${it[0]}', file=${it[1]}" }
+
+        // Convert run_peaks TSV to per-run PQP
+        OPENSWATHASSAYGENERATOR_NAMED(named_run_peaks)
+        per_run_pqps = OPENSWATHASSAYGENERATOR_NAMED.out.run_library
+
+        // Create linear iRT PQPs using easypqp reduce
+        EASYPQP_REDUCE(per_run_pqps)
+        per_run_linear = EASYPQP_REDUCE.out.reduced_pqp
+
+        // Join full PQP and reduced PQP by run_id
+        // Result: tuple(run_id, full_pqp, linear_pqp)
+        joined_pqps = per_run_pqps.join(per_run_linear)
+        
+        // DEBUG: Show joined PQPs
+        joined_pqps.view { "[DEBUG] joined_pqps: run_id='${it[0]}', full_pqp=${it[1]}, linear_pqp=${it[2]}" }
+
+        // Join DIA files with their matching per-run PQPs
+        // Using inner join - only matched files will proceed with per-run iRTs
+        // Result: tuple(run_id, dia_file, full_pqp, linear_pqp)
+        matched_ch = dia_normalized.join(joined_pqps)
+        
+        // DEBUG: Show matched results
+        matched_ch.view { "[DEBUG] MATCHED: run_id='${it[0]}', dia=${it[1]}, full_pqp=${it[2]}, linear_pqp=${it[3]}" }
+
+        // Extract the matched DIA files and their per-run iRTs
+        matched_dia = matched_ch.map { run_id, dia, full_pqp, linear_pqp -> 
+            tuple(dia, linear_pqp, full_pqp, false)  // (dia_file, linear_irt, full_irt, use_auto_irt)
+        }
+
+        // Find unmatched DIA files using join with remainder
+        // These will use auto_irt as fallback
+        no_irt_file = file('NO_IRT_FILE')
+        unmatched_ch = dia_normalized
+            .join(joined_pqps, remainder: true)
+            .filter { it.size() == 2 || it[2] == null }  // Only items without PQP match
+            .map { items -> 
+                def run_id = items[0]
+                def dia = items[1]
+                tuple(dia, no_irt_file, no_irt_file, params.use_auto_irts ?: true)
+            }
+        
+        // DEBUG: Show unmatched results
+        unmatched_ch.view { "[DEBUG] UNMATCHED: dia=${it[0]}, using auto_irt=${it[3]}" }
+
+        // Combine matched and unmatched into input channels for OPENSWATHWORKFLOW
+        all_inputs = matched_dia.mix(unmatched_ch)
+        
+        dia_files_ch = all_inputs.map { dia, lin, full, auto -> dia }
+        linear_irt_ch = all_inputs.map { dia, lin, full, auto -> lin }
+        full_irt_ch = all_inputs.map { dia, lin, full, auto -> full }
+        auto_irt_ch = all_inputs.map { dia, lin, full, auto -> auto }
+
+        per_run = OPENSWATHWORKFLOW(dia_files_ch, pqp_library_decoyed_ch, linear_irt_ch, full_irt_ch, swath_windows_ch, auto_irt_ch)
+    } else {
+        // Not using run-specific iRTs - use global strategy
+        dia_files_ch = dia_normalized.map { run_id, dia -> dia }
+        
+        if (params.irt_traml) {
+            // Use provided iRT TraML for all runs
+            per_run = OPENSWATHWORKFLOW(dia_files_ch, pqp_library_decoyed_ch, irt_traml_ch, irt_nonlinear_traml_ch, swath_windows_ch, Channel.value(false))
+        } else if (params.use_auto_irts) {
+            // Let OpenSwathWorkflow sample the PQP for iRT
+            no_irt_ch = Channel.value(file('NO_IRT_FILE'))
+            per_run = OPENSWATHWORKFLOW(dia_files_ch, pqp_library_decoyed_ch, no_irt_ch, no_irt_ch, swath_windows_ch, Channel.value(true))
+        } else {
+            // No iRT calibration
+            no_irt_ch = Channel.value(file('NO_IRT_FILE'))
+            per_run = OPENSWATHWORKFLOW(dia_files_ch, pqp_library_decoyed_ch, no_irt_ch, no_irt_ch, swath_windows_ch, Channel.value(false))
         }
     }
 
@@ -116,33 +168,64 @@ workflow ASSAY_DECOY_FROM_PQP {
     OPENSWATHDECOYGENERATOR(pqp_library)
     pqp_library_decoyed_ch = OPENSWATHDECOYGENERATOR.out.library
 
-    // Choose iRT strategy for provided PQP (precedence same as transition path)
-    def use_run_specific = params.use_runspecific_irts && (run_peaks_ch && !run_peaks_ch.empty)
+    // Normalize DIA_MZML
+    dia_normalized = DIA_MZML.map { item ->
+        if (item instanceof List || item instanceof ArrayList) {
+            return tuple(item[0].toString(), item[1])
+        } else {
+            return tuple(item.baseName.toString(), item)
+        }
+    }
 
-    if (use_run_specific) {
-      named_run_peaks = run_peaks_ch.map { peaks -> tuple(peaks.baseName.replaceAll(/_run_peaks$/, ''), peaks) }
+    if (params.use_runspecific_irts) {
+        named_run_peaks = run_peaks_ch.map { peaks -> 
+            def run_id = peaks.baseName.replaceAll(/_run_peaks$/, '')
+            return tuple(run_id.toString(), peaks)
+        }
 
-      // Convert each run peaks TSV into a per-run PQP by calling the named OPENSWATHASSAYGENERATOR
-      per_run_pqps = OPENSWATHASSAYGENERATOR_NAMED(named_run_peaks)
+        OPENSWATHASSAYGENERATOR_NAMED(named_run_peaks)
+        per_run_pqps = OPENSWATHASSAYGENERATOR_NAMED.out.run_library
 
-      named_dia = DIA_MZML.map { d -> d instanceof Tuple ? d : tuple(d.baseName, d) }
-      paired = named_dia.join(per_run_pqps)
-      dia_files = paired.map { run_id, mzml, run_pqp -> mzml }
-      per_run_irt_pqps = paired.map { run_id, mzml, run_pqp -> run_pqp }
+        EASYPQP_REDUCE(per_run_pqps)
+        per_run_linear = EASYPQP_REDUCE.out.reduced_pqp
 
-      // Provide per-run PQPs and disable auto_irt
-      per_run = OPENSWATHWORKFLOW(dia_files, pqp_library_decoyed_ch, per_run_irt_pqps, irt_nonlinear_traml_ch, swath_windows_ch, Channel.value(false))
+        joined_pqps = per_run_pqps.join(per_run_linear)
+        matched_ch = dia_normalized.join(joined_pqps)
+
+        matched_dia = matched_ch.map { run_id, dia, full_pqp, linear_pqp -> 
+            tuple(dia, linear_pqp, full_pqp, false)
+        }
+
+        no_irt_file = file('NO_IRT_FILE')
+        unmatched_ch = dia_normalized
+            .join(joined_pqps, remainder: true)
+            .filter { it.size() == 2 || it[2] == null }
+            .map { items -> 
+                def run_id = items[0]
+                def dia = items[1]
+                tuple(dia, no_irt_file, no_irt_file, params.use_auto_irts ?: true)
+            }
+
+        all_inputs = matched_dia.mix(unmatched_ch)
+        
+        dia_files_ch = all_inputs.map { dia, lin, full, auto -> dia }
+        linear_irt_ch = all_inputs.map { dia, lin, full, auto -> lin }
+        full_irt_ch = all_inputs.map { dia, lin, full, auto -> full }
+        auto_irt_ch = all_inputs.map { dia, lin, full, auto -> auto }
+
+        per_run = OPENSWATHWORKFLOW(dia_files_ch, pqp_library_decoyed_ch, linear_irt_ch, full_irt_ch, swath_windows_ch, auto_irt_ch)
     } else {
-      if (params.irt_traml) {
-        // Use provided irt_traml globally
-        per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed_ch, irt_traml_ch, irt_nonlinear_traml_ch, swath_windows_ch, Channel.value(false))
-      } else if (params.use_auto_irts) {
-        no_irt_ch = Channel.value(file('NO_IRT_FILE'))
-        per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed_ch, no_irt_ch, no_irt_ch, swath_windows_ch, Channel.value(true))
-      } else {
-        no_irt_ch = Channel.value(file('NO_IRT_FILE'))
-        per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed_ch, no_irt_ch, no_irt_ch, swath_windows_ch, Channel.value(false))
-      }
+        dia_files_ch = dia_normalized.map { run_id, dia -> dia }
+        
+        if (params.irt_traml) {
+            per_run = OPENSWATHWORKFLOW(dia_files_ch, pqp_library_decoyed_ch, irt_traml_ch, irt_nonlinear_traml_ch, swath_windows_ch, Channel.value(false))
+        } else if (params.use_auto_irts) {
+            no_irt_ch = Channel.value(file('NO_IRT_FILE'))
+            per_run = OPENSWATHWORKFLOW(dia_files_ch, pqp_library_decoyed_ch, no_irt_ch, no_irt_ch, swath_windows_ch, Channel.value(true))
+        } else {
+            no_irt_ch = Channel.value(file('NO_IRT_FILE'))
+            per_run = OPENSWATHWORKFLOW(dia_files_ch, pqp_library_decoyed_ch, no_irt_ch, no_irt_ch, swath_windows_ch, Channel.value(false))
+        }
     }
 
   emit:
