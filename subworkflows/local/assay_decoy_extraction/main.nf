@@ -55,9 +55,6 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
             return tuple(item.baseName.toString(), item)
         }
     }
-    
-    // DEBUG: Show normalized DIA files
-    dia_normalized.view { "[DEBUG] DIA normalized: run_id='${it[0]}', file=${it[1]}" }
 
     // Decide iRT strategy based on params
     if (params.use_runspecific_irts) {
@@ -69,9 +66,6 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
             def run_id = peaks.baseName.replaceAll(/_run_peaks$/, '')
             return tuple(run_id.toString(), peaks)
         }
-        
-        // DEBUG: Show named run_peaks
-        named_run_peaks.view { "[DEBUG] run_peaks: run_id='${it[0]}', file=${it[1]}" }
 
         // Convert run_peaks TSV to per-run PQP
         OPENSWATHASSAYGENERATOR_NAMED(named_run_peaks)
@@ -84,17 +78,11 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
         // Join full PQP and reduced PQP by run_id
         // Result: tuple(run_id, full_pqp, linear_pqp)
         joined_pqps = per_run_pqps.join(per_run_linear)
-        
-        // DEBUG: Show joined PQPs
-        joined_pqps.view { "[DEBUG] joined_pqps: run_id='${it[0]}', full_pqp=${it[1]}, linear_pqp=${it[2]}" }
 
         // Join DIA files with their matching per-run PQPs
         // Using inner join - only matched files will proceed with per-run iRTs
         // Result: tuple(run_id, dia_file, full_pqp, linear_pqp)
         matched_ch = dia_normalized.join(joined_pqps)
-        
-        // DEBUG: Show matched results
-        matched_ch.view { "[DEBUG] MATCHED: run_id='${it[0]}', dia=${it[1]}, full_pqp=${it[2]}, linear_pqp=${it[3]}" }
 
         // Extract the matched DIA files and their per-run iRTs
         matched_dia = matched_ch.map { run_id, dia, full_pqp, linear_pqp -> 
@@ -112,9 +100,6 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
                 def dia = items[1]
                 tuple(dia, no_irt_file, no_irt_file, params.use_auto_irts ?: true)
             }
-        
-        // DEBUG: Show unmatched results
-        unmatched_ch.view { "[DEBUG] UNMATCHED: dia=${it[0]}, using auto_irt=${it[3]}" }
 
         // Combine matched and unmatched into input channels for OPENSWATHWORKFLOW
         all_inputs = matched_dia.mix(unmatched_ch)
