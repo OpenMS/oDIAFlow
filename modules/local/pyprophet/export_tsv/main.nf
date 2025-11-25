@@ -19,12 +19,19 @@ process PYPROPHET_EXPORT_TSV {
 
   script:
   def args = task.ext.args ?: ''
+  // Copy OSW file locally to avoid SQLite locking issues on network filesystems
   """
-  pyprophet export tsv --in ${scored_osw} --out merged.tsv \
+  # Copy OSW to local working directory to avoid SQLite database locking issues
+  cp ${scored_osw} local_scored.osw
+  
+  pyprophet export tsv --in local_scored.osw --out merged.tsv \
     --max_rs_peakgroup_qvalue ${params.pyprophet_export_tsv.max_rs_peakgroup_qvalue} \
     --max_global_peptide_qvalue ${params.pyprophet_export_tsv.max_global_peptide_qvalue} \
     --max_global_protein_qvalue ${params.pyprophet_export_tsv.max_global_protein_qvalue} \
     ${args} \
     2>&1 | tee pyprophet_export_tsv.log
+  
+  # Clean up local copy
+  rm -f local_scored.osw
   """
 }
