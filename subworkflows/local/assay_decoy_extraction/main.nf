@@ -64,7 +64,8 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
         // Try to use per-run iRTs from run_peaks files
         // run_peaks files are named like <run>_run_peaks.tsv
         // Extract run_id by removing the _run_peaks suffix
-        named_run_peaks = run_peaks_ch.map { peaks -> 
+        // NOTE: run_peaks_ch may contain a list of files (from glob output), so flatten first
+        named_run_peaks = run_peaks_ch.flatten().map { peaks -> 
             def run_id = peaks.baseName.replaceAll(/_run_peaks$/, '')
             return tuple(run_id.toString(), peaks)
         }
@@ -178,7 +179,8 @@ workflow ASSAY_DECOY_FROM_PQP {
     }
 
     if (params.use_runspecific_irts) {
-        named_run_peaks = run_peaks_ch.map { peaks -> 
+        // NOTE: run_peaks_ch may contain a list of files (from glob output), so flatten first
+        named_run_peaks = run_peaks_ch.flatten().map { peaks -> 
             def run_id = peaks.baseName.replaceAll(/_run_peaks$/, '')
             return tuple(run_id.toString(), peaks)
         }
