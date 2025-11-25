@@ -8,21 +8,21 @@ process EASYPQP_REDUCE {
         'ghcr.io/openswath/openswath:dev' }"
 
   input:
-  tuple val(run_id), path pqp
+  tuple val(run_id), path(pqp)
 
   output:
-  tuple val(run_id), path "irt_${run_id}.pqp", emit: reduced_pqp
+  tuple val(run_id), path("irt_${run_id}.pqp"), emit: reduced_pqp
 
   script:
   def out_file = "irt_${run_id}.pqp"
   def bins = params.easypqp?.reduce?.bins ?: 10
   def peptides = params.easypqp?.reduce?.peptides ?: 20
   """
-  easypqp reduce \
-    --in=${pqp} \
-    --out=${out_file} \
-    --bins=${bins} \
-    --peptides=${peptides} \
+  easypqp reduce \\
+    --in=${pqp} \\
+    --out=${out_file} \\
+    --bins=${bins} \\
+    --peptides=${peptides} \\
   2>&1 | tee easypqp_reduce_${run_id}.log
   """
 }
