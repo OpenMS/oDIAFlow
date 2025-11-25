@@ -32,8 +32,13 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
     // Create decoy library
     pqp_library_decoyed = OPENSWATHDECOYGENERATOR(pqp_library)
 
-    // If run-specific peaks (run_peaks_ch) are provided, convert them to per-run PQPs and pair with DIA_MZML
-    if (run_peaks_ch && !run_peaks_ch.empty) {
+  // Decide iRT strategy using precedence:
+  // 1) params.use_runspecific_irts and run_peaks available -> per-run iRT PQPs
+  // 2) params.irt_traml set -> use provided irt_traml for all runs
+  // 3) params.use_auto_irts -> let OpenSwathWorkflow sample the PQP (auto_irt)
+  def use_run_specific = params.use_runspecific_irts && (run_peaks_ch && !run_peaks_ch.empty)
+
+  if (use_run_specific) {
         // run_peaks_ch elements are paths like <run>_run_peaks.tsv; map to (run_id, path)
         named_run_peaks = run_peaks_ch.map { peaks -> tuple(peaks.baseName.replaceAll(/_run_peaks$/, ''), peaks) }
 
@@ -63,10 +68,23 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
         per_run_full_pqps = paired.map { run_id, mzml, pqp_trip -> pqp_trip[1] }
 
         // Run OpenSwathWorkflow per run, providing per-run linear and nonlinear iRT PQPs
-        per_run = OPENSWATHWORKFLOW(dia_files, pqp_library_decoyed.out.library, per_run_linear_pqps, per_run_full_pqps, swath_windows_ch)
+        // Pass use_auto_irt_override=false to prevent OpenSwath from auto-sampling when explicit iRTs are provided
+        per_run = OPENSWATHWORKFLOW(dia_files, pqp_library_decoyed.out.library, per_run_linear_pqps, per_run_full_pqps, swath_windows_ch, Channel.value(false))
     } else {
-        // Run extraction with decoyed library using global IRT channels
-        per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, irt_traml_ch, irt_nonlinear_traml_ch, swath_windows_ch)
+        // Run extraction using global settings. Choose between explicit irt_traml, or auto_irt based on params.
+        if (params.irt_traml) {
+          // Use provided irt_traml for all runs and disable auto_irt
+          per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, irt_traml_ch, irt_nonlinear_traml_ch, swath_windows_ch, Channel.value(false))
+        } else if (params.use_auto_irts) {
+          // Let OpenSwathWorkflow sample the provided PQP (enable auto_irt)
+          // Pass null for irt inputs and set use_auto_irt_override=true
+          null_ch = Channel.value(null)
+          per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, null_ch, null_ch, swath_windows_ch, Channel.value(true))
+        } else {
+          // Default: no iRT supplied, disable auto_irt
+          null_ch = Channel.value(null)
+          per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, null_ch, null_ch, swath_windows_ch, Channel.value(false))
+        }
     }
 
   emit:
@@ -89,8 +107,10 @@ workflow ASSAY_DECOY_FROM_PQP {
     // Create decoy library from provided PQP
     pqp_library_decoyed = OPENSWATHDECOYGENERATOR(pqp_library)
 
-    // If run-specific peaks provided, convert and pair like the transition workflow
-    if (run_peaks_ch && !run_peaks_ch.empty) {
+    // Choose iRT strategy for provided PQP (precedence same as transition path)
+    def use_run_specific = params.use_runspecific_irts && (run_peaks_ch && !run_peaks_ch.empty)
+
+    if (use_run_specific) {
       named_run_peaks = run_peaks_ch.map { peaks -> tuple(peaks.baseName.replaceAll(/_run_peaks$/, ''), peaks) }
 
       // Convert each run peaks TSV into a per-run PQP by calling the named OPENSWATHASSAYGENERATOR
@@ -101,10 +121,19 @@ workflow ASSAY_DECOY_FROM_PQP {
       dia_files = paired.map { run_id, mzml, run_pqp -> mzml }
       per_run_irt_pqps = paired.map { run_id, mzml, run_pqp -> run_pqp }
 
-      per_run = OPENSWATHWORKFLOW(dia_files, pqp_library_decoyed, per_run_irt_pqps, irt_nonlinear_traml_ch, swath_windows_ch)
+      // Provide per-run PQPs and disable auto_irt
+      per_run = OPENSWATHWORKFLOW(dia_files, pqp_library_decoyed, per_run_irt_pqps, irt_nonlinear_traml_ch, swath_windows_ch, Channel.value(false))
     } else {
-      // Run extraction with decoyed library
-      per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, irt_traml_ch, irt_nonlinear_traml_ch, swath_windows_ch)
+      if (params.irt_traml) {
+        // Use provided irt_traml globally
+        per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, irt_traml_ch, irt_nonlinear_traml_ch, swath_windows_ch, Channel.value(false))
+      } else if (params.use_auto_irts) {
+        null_ch = Channel.value(null)
+        per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, null_ch, null_ch, swath_windows_ch, Channel.value(true))
+      } else {
+        null_ch = Channel.value(null)
+        per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, null_ch, null_ch, swath_windows_ch, Channel.value(false))
+      }
     }
 
   emit:
