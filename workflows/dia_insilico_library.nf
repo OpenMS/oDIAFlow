@@ -8,7 +8,7 @@
 // MODULES: Local to the pipeline
 //
 include { DIAPYSEF_TDF_TO_MZML }           from '../modules/local/diapysef_tdf_to_mzml/main.nf'
-include { OPENSWATHASSAYGENERATOR }        from '../modules/local/openms/openswathassaygenerator/main.nf'
+include { OPENSWATHASSAYGENERATOR }        from '../modules/local/openms/openswathassaygenerator/core/main.nf'
 include { OPENSWATHDECOYGENERATOR }        from '../modules/local/openms/openswathdecoygenerator/main.nf'
 include { OPENSWATHWORKFLOW }              from '../modules/local/openms/openswathworkflow/main.nf'
 include { PYPROPHET_CALIBRATION_REPORT }   from '../modules/local/pyprophet/calibration_report/main.nf'

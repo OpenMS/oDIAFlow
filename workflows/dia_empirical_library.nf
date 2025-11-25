@@ -13,7 +13,7 @@ include { SAGE_SEARCH as SAGE_SEARCH_DIA } from '../modules/local/sage/search/ma
 include { SAGE_COMBINE_RESULTS }           from '../modules/local/sage/combine_searches/main.nf'
 include { EASYPQP_CONVERTSAGE }            from '../modules/local/easypqp/convertsage/main.nf'
 include { EASYPQP_LIBRARY }                from '../modules/local/easypqp/library/main.nf'
-include { OPENSWATHASSAYGENERATOR }        from '../modules/local/openms/openswathassaygenerator/main.nf'
+include { OPENSWATHASSAYGENERATOR }        from '../modules/local/openms/openswathassaygenerator/core/main.nf'
 include { OPENSWATHDECOYGENERATOR }        from '../modules/local/openms/openswathdecoygenerator/main.nf'
 include { OPENSWATHWORKFLOW }              from '../modules/local/openms/openswathworkflow/main.nf'
 include { PYPROPHET_EXPORT_PARQUET }       from '../modules/local/pyprophet/export_parquet/main.nf'
