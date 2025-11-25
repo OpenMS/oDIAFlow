@@ -91,14 +91,14 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
 
         // Find unmatched DIA files using join with remainder
         // These will use auto_irt as fallback
-        no_irt_file = file('NO_IRT_FILE')
+        // Use empty list [] instead of placeholder file to avoid name collisions
         unmatched_ch = dia_normalized
             .join(joined_pqps, remainder: true)
             .filter { it.size() == 2 || it[2] == null }  // Only items without PQP match
             .map { items -> 
                 def run_id = items[0]
                 def dia = items[1]
-                tuple(dia, no_irt_file, no_irt_file, params.use_auto_irts ?: true)
+                tuple(dia, [], [], params.use_auto_irts ?: true)
             }
 
         // Combine matched and unmatched into input channels for OPENSWATHWORKFLOW
@@ -121,11 +121,11 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
             per_run = OPENSWATHWORKFLOW(dia_files_ch, pqp_library_decoyed_ch, irt_traml_ch, irt_nonlinear_traml_ch, Channel.value(false), swath_windows_ch)
         } else if (params.use_auto_irts) {
             // Let OpenSwathWorkflow sample the PQP for iRT
-            no_irt_ch = Channel.value(file('NO_IRT_FILE'))
+            no_irt_ch = Channel.value([])
             per_run = OPENSWATHWORKFLOW(dia_files_ch, pqp_library_decoyed_ch, no_irt_ch, no_irt_ch, Channel.value(true), swath_windows_ch)
         } else {
             // No iRT calibration
-            no_irt_ch = Channel.value(file('NO_IRT_FILE'))
+            no_irt_ch = Channel.value([])
             per_run = OPENSWATHWORKFLOW(dia_files_ch, pqp_library_decoyed_ch, no_irt_ch, no_irt_ch, Channel.value(false), swath_windows_ch)
         }
     }
