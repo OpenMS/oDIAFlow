@@ -11,10 +11,10 @@ process OPENSWATHASSAYGENERATOR_NAMED {
   publishDir "${params.outdir}/logs/openms", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
 
   input:
-  tuple val(run_id), path transition_list
+  tuple val(run_id), path(transition_list)
 
   output:
-  tuple val(run_id), path "library_targets.${params.osag.out_type}", emit: run_library
+  tuple val(run_id), path("library_targets.${params.osag.out_type}"), emit: run_library
   path "*.log", emit: log
 
   script:
