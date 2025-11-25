@@ -13,7 +13,8 @@
     - sage_results : combined SAGE results TSV (joined results + matched fragments)
 */
 
-include { SAGE_SEARCH } from '../../../modules/local/sage/search/main.nf'
+include { SAGE_SEARCH as SAGE_SEARCH_DDA } from '../../../modules/local/sage/search/main.nf'
+include { SAGE_SEARCH as SAGE_SEARCH_DIA } from '../../../modules/local/sage/search/main.nf'
 include { SAGE_COMBINE_RESULTS } from '../../../modules/local/sage/combine_searches/main.nf'
 include { EASYPQP_CONVERTSAGE } from '../../../modules/local/easypqp/convertsage/main.nf'
 include { EASYPQP_LIBRARY } from '../../../modules/local/easypqp/library/main.nf'
@@ -27,11 +28,11 @@ workflow SAGE_EASYPQP_LIBRARY {
 
   main:
     // Run SAGE on DDA files
-    dda_sage_results = SAGE_SEARCH(DDA_FOR_SEARCH, fasta_ch)
+    dda_sage_results = SAGE_SEARCH_DDA(DDA_FOR_SEARCH, fasta_ch)
 
     // Optionally run SAGE on DIA (for library building) and combine
     if (params.sage.search_dia_for_lib && params.dia_for_lib_glob) {
-      dia_sage_results = SAGE_SEARCH(DIA_FOR_SEARCH, fasta_ch)
+      dia_sage_results = SAGE_SEARCH_DIA(DIA_FOR_SEARCH, fasta_ch)
 
       combined_input = dda_sage_results.results
         .map { sample_id, results_tsv, search_type -> tuple("combined", results_tsv) }
