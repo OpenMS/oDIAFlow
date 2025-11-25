@@ -16,6 +16,7 @@ process EASYPQP_LIBRARY {
 
   output:
   path "easypqp_library.tsv", emit: library_tsv
+  path "*_run_peaks.tsv", emit: run_peaks
   path "*.log", emit: log
 
   script:

@@ -24,6 +24,10 @@ output:
       type: file
       description: EasyPQP target assay library in TSV format generated from the provided PSM and peak pickle files.
       pattern: "easypqp_library.tsv"
+  - run_peaks:
+    type: file
+    description: Per-run peak lists produced by EasyPQP which can be used as run-specific iRT inputs (pattern: *_run_peaks.tsv).
+    pattern: "*_run_peaks.tsv"
   - versions:
       type: file
       description: Software version manifest produced by the process.
