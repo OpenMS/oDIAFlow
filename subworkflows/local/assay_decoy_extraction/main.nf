@@ -11,9 +11,10 @@
     - library: the pqp produced from transition (when applicable)
 */
 
-include { OPENSWATHASSAYGENERATOR } from '../../../modules/local/openms/openswathassaygenerator/main.nf'
+include { OPENSWATHASSAYGENERATOR, OPENSWATHASSAYGENERATOR_NAMED } from '../../../modules/local/openms/openswathassaygenerator/main.nf'
 include { OPENSWATHDECOYGENERATOR } from '../../../modules/local/openms/openswathdecoygenerator/main.nf'
 include { OPENSWATHWORKFLOW } from '../../../modules/local/openms/openswathworkflow/main.nf'
+include { EASYPQP_REDUCE } from '../../../modules/local/easypqp/reduce/main.nf'
 
 workflow ASSAY_DECOY_FROM_TRANSITION {
 
@@ -45,9 +46,8 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
         // Convert each run peaks TSV into a per-run PQP by calling the named OPENSWATHASSAYGENERATOR
         per_run_pqps = OPENSWATHASSAYGENERATOR_NAMED(named_run_peaks)
 
-        // Create linear iRT PQPs from per-run full PQPs using easypqp reduce
-        include { EASYPQP_REDUCE } from '../../../modules/local/easypqp/reduce/main.nf'
-        per_run_linear = EASYPQP_REDUCE(per_run_pqps)
+  // Create linear iRT PQPs from per-run full PQPs using easypqp reduce
+  per_run_linear = EASYPQP_REDUCE(per_run_pqps)
 
         // Join full PQP and reduced PQP by run id to get tuples (run_id, full_pqp, linear_pqp)
         // per_run_pqps and per_run_linear are both channels of tuple(run_id, path)

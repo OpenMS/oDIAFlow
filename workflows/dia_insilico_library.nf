@@ -19,7 +19,8 @@ include { ARYCAL }                         from '../modules/local/arycal/main.nf
 include { PYPROPHET_ALIGNMENT_SCORING }    from '../modules/local/pyprophet/alignment_scoring/main.nf'
 include { PYPROPHET_OSW_FULL }             from '../subworkflows/local/pyprophet_osw/main.nf'
 include { PYPROPHET_PARQUET_FULL }         from '../subworkflows/local/pyprophet_parquet/main.nf'
-include { ASSAY_DECOY_FROM_TRANSITION, ASSAY_DECOY_FROM_PQP } from '../subworkflows/local/assay_decoy_extraction/main.nf'
+include { ASSAY_DECOY_FROM_TRANSITION } from '../subworkflows/local/assay_decoy_extraction/main.nf'
+include { ASSAY_DECOY_FROM_PQP } from '../subworkflows/local/assay_decoy_extraction/main.nf'
 include { MERGE_ALIGN_SCORE } from '../subworkflows/local/merge_align_score/main.nf'
 
 //
