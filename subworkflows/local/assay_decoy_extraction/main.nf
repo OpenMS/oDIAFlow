@@ -78,13 +78,13 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
           per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, irt_traml_ch, irt_nonlinear_traml_ch, swath_windows_ch, Channel.value(false))
         } else if (params.use_auto_irts) {
           // Let OpenSwathWorkflow sample the provided PQP (enable auto_irt)
-          // Pass an empty channel for irt inputs and set use_auto_irt_override=true
-          null_ch = Channel.empty()
-          per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, null_ch, null_ch, swath_windows_ch, Channel.value(true))
+          // Pass placeholder files for irt inputs and set use_auto_irt_override=true
+          no_irt_ch = Channel.value(file('NO_IRT_FILE'))
+          per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, no_irt_ch, no_irt_ch, swath_windows_ch, Channel.value(true))
         } else {
           // Default: no iRT supplied, disable auto_irt
-          null_ch = Channel.empty()
-          per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, null_ch, null_ch, swath_windows_ch, Channel.value(false))
+          no_irt_ch = Channel.value(file('NO_IRT_FILE'))
+          per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, no_irt_ch, no_irt_ch, swath_windows_ch, Channel.value(false))
         }
     }
 
@@ -129,11 +129,11 @@ workflow ASSAY_DECOY_FROM_PQP {
         // Use provided irt_traml globally
         per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, irt_traml_ch, irt_nonlinear_traml_ch, swath_windows_ch, Channel.value(false))
       } else if (params.use_auto_irts) {
-        null_ch = Channel.empty()
-        per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, null_ch, null_ch, swath_windows_ch, Channel.value(true))
+        no_irt_ch = Channel.value(file('NO_IRT_FILE'))
+        per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, no_irt_ch, no_irt_ch, swath_windows_ch, Channel.value(true))
       } else {
-        null_ch = Channel.empty()
-        per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, null_ch, null_ch, swath_windows_ch, Channel.value(false))
+        no_irt_ch = Channel.value(file('NO_IRT_FILE'))
+        per_run = OPENSWATHWORKFLOW(DIA_MZML, pqp_library_decoyed, no_irt_ch, no_irt_ch, swath_windows_ch, Channel.value(false))
       }
     }
 
