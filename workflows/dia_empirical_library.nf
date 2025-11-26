@@ -79,19 +79,35 @@ workflow OPEN_SWATH_E2E {
         // Collect all files from all glob patterns
         def all_dda_files = []
         dda_globs.each { glob ->
-            def files = file(glob)
-            if (files instanceof List) {
-                all_dda_files.addAll(files)
-            } else if (files.exists()) {
-                all_dda_files.add(files)
+            if (glob.endsWith('.d')) {
+                // For Bruker .d directories, use file() with type option
+                // file() returns Path objects that match the glob
+                def dirs = file(glob, type: 'dir')
+                if (dirs instanceof List) {
+                    all_dda_files.addAll(dirs)
+                } else if (dirs.exists()) {
+                    all_dda_files.add(dirs)
+                } else {
+                    log.warn "No .d directories found for DDA glob pattern: ${glob}"
+                }
             } else {
-                log.warn "No files found for DDA glob pattern: ${glob}"
+                // For regular files (mzML, etc.)
+                def files = file(glob)
+                if (files instanceof List) {
+                    all_dda_files.addAll(files)
+                } else if (files.exists()) {
+                    all_dda_files.add(files)
+                } else {
+                    log.warn "No files found for DDA glob pattern: ${glob}"
+                }
             }
         }
         
         if (all_dda_files.isEmpty()) {
             error "No DDA files found matching any of the patterns: ${dda_globs}"
         }
+        
+        log.info "Found ${all_dda_files.size()} DDA files/directories for Sage search"
         
         Channel.fromList(all_dda_files)
             .collect()
@@ -111,19 +127,34 @@ workflow OPEN_SWATH_E2E {
         // Collect all files from all glob patterns
         def all_dia_lib_files = []
         dia_lib_globs.each { glob ->
-            def files = file(glob)
-            if (files instanceof List) {
-                all_dia_lib_files.addAll(files)
-            } else if (files.exists()) {
-                all_dia_lib_files.add(files)
+            if (glob.endsWith('.d')) {
+                // For Bruker .d directories
+                def dirs = file(glob, type: 'dir')
+                if (dirs instanceof List) {
+                    all_dia_lib_files.addAll(dirs)
+                } else if (dirs.exists()) {
+                    all_dia_lib_files.add(dirs)
+                } else {
+                    log.warn "No .d directories found for DIA library glob pattern: ${glob}"
+                }
             } else {
-                log.warn "No files found for DIA library glob pattern: ${glob}"
+                // For regular files (mzML, etc.)
+                def files = file(glob)
+                if (files instanceof List) {
+                    all_dia_lib_files.addAll(files)
+                } else if (files.exists()) {
+                    all_dia_lib_files.add(files)
+                } else {
+                    log.warn "No files found for DIA library glob pattern: ${glob}"
+                }
             }
         }
         
         if (all_dia_lib_files.isEmpty()) {
             error "No DIA library files found matching any of the patterns: ${dia_lib_globs}"
         }
+        
+        log.info "Found ${all_dia_lib_files.size()} DIA library files/directories for Sage search"
         
         Channel.fromList(all_dia_lib_files)
             .collect()
