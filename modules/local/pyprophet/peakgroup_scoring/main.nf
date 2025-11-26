@@ -14,6 +14,7 @@ process PYPROPHET_PEAKGROUP_SCORING {
 
   output:
   path "${input_data}", emit: scored
+  path "*.pdf", emit: report, optional: true
   path "*.log", emit: log
 
   // Note: PyProphet writes scores back into the same file/directory
