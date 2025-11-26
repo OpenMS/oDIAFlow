@@ -121,11 +121,40 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
             def normalized_id = normalizeRunName(run_id)
             return tuple(normalized_id, run_id, full_pqp, linear_pqp)
         }
+        
+        // Group by normalized_id to handle multiple pseudo-spectra per DIA file
+        // e.g., DIA-Umpire produces Q1, Q2, Q3 which all normalize to the same base name
+        // Result: tuple(normalized_run_id, [original_ids], [full_pqps], [linear_pqps])
+        joined_pqps_grouped = joined_pqps_normalized.groupTuple(by: 0)
+        
+        // Select the best pseudo-spectra for each DIA file
+        // Priority: Q1 > Q2 > Q3 > diatracer > first available
+        // Result: tuple(normalized_run_id, best_original_id, best_full_pqp, best_linear_pqp)
+        joined_pqps_best = joined_pqps_grouped.map { normalized_id, original_ids, full_pqps, linear_pqps ->
+            def best_idx = 0
+            
+            // Find the best quality pseudo-spectra (Q1 preferred)
+            for (int i = 0; i < original_ids.size(); i++) {
+                def id = original_ids[i].toString()
+                if (id.endsWith('_Q1')) {
+                    best_idx = i
+                    break  // Q1 is the best, stop searching
+                } else if (id.endsWith('_Q2') && !original_ids[best_idx].toString().endsWith('_Q1')) {
+                    best_idx = i
+                } else if (id.endsWith('_Q3') && !original_ids[best_idx].toString().endsWith('_Q1') && !original_ids[best_idx].toString().endsWith('_Q2')) {
+                    best_idx = i
+                }
+            }
+            
+            log.debug "Run-specific iRT: For DIA '${normalized_id}', selected pseudo-spectra '${original_ids[best_idx]}' from candidates: ${original_ids}"
+            
+            return tuple(normalized_id, original_ids[best_idx], full_pqps[best_idx], linear_pqps[best_idx])
+        }
 
         // Join DIA files with their matching per-run PQPs using normalized names
         // Using inner join - only matched files will proceed with per-run iRTs
         // Result: tuple(normalized_run_id, dia_file, original_run_id, full_pqp, linear_pqp)
-        matched_ch = dia_normalized.join(joined_pqps_normalized)
+        matched_ch = dia_normalized.join(joined_pqps_best)
 
         // Extract the matched DIA files and their per-run iRTs
         // Note: tuple structure after join is (normalized_id, dia, original_id, full_pqp, linear_pqp)
@@ -137,7 +166,7 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
         // These will use auto_irt as fallback
         // Use empty list [] instead of placeholder file to avoid name collisions
         unmatched_ch = dia_normalized
-            .join(joined_pqps_normalized, remainder: true)
+            .join(joined_pqps_best, remainder: true)
             .filter { it.size() == 2 || it[2] == null }  // Only items without PQP match
             .map { items -> 
                 def run_id = items[0]
@@ -233,7 +262,36 @@ workflow ASSAY_DECOY_FROM_PQP {
             return tuple(normalized_id, run_id, full_pqp, linear_pqp)
         }
         
-        matched_ch = dia_normalized.join(joined_pqps_normalized)
+        // Group by normalized_id to handle multiple pseudo-spectra per DIA file
+        // e.g., DIA-Umpire produces Q1, Q2, Q3 which all normalize to the same base name
+        // Result: tuple(normalized_run_id, [original_ids], [full_pqps], [linear_pqps])
+        joined_pqps_grouped = joined_pqps_normalized.groupTuple(by: 0)
+        
+        // Select the best pseudo-spectra for each DIA file
+        // Priority: Q1 > Q2 > Q3 > diatracer > first available
+        // Result: tuple(normalized_run_id, best_original_id, best_full_pqp, best_linear_pqp)
+        joined_pqps_best = joined_pqps_grouped.map { normalized_id, original_ids, full_pqps, linear_pqps ->
+            def best_idx = 0
+            
+            // Find the best quality pseudo-spectra (Q1 preferred)
+            for (int i = 0; i < original_ids.size(); i++) {
+                def id = original_ids[i].toString()
+                if (id.endsWith('_Q1')) {
+                    best_idx = i
+                    break  // Q1 is the best, stop searching
+                } else if (id.endsWith('_Q2') && !original_ids[best_idx].toString().endsWith('_Q1')) {
+                    best_idx = i
+                } else if (id.endsWith('_Q3') && !original_ids[best_idx].toString().endsWith('_Q1') && !original_ids[best_idx].toString().endsWith('_Q2')) {
+                    best_idx = i
+                }
+            }
+            
+            log.debug "Run-specific iRT: For DIA '${normalized_id}', selected pseudo-spectra '${original_ids[best_idx]}' from candidates: ${original_ids}"
+            
+            return tuple(normalized_id, original_ids[best_idx], full_pqps[best_idx], linear_pqps[best_idx])
+        }
+        
+        matched_ch = dia_normalized.join(joined_pqps_best)
 
         // Note: tuple structure after join is (normalized_id, dia, original_id, full_pqp, linear_pqp)
         matched_dia = matched_ch.map { normalized_id, dia, original_id, full_pqp, linear_pqp -> 
@@ -242,7 +300,7 @@ workflow ASSAY_DECOY_FROM_PQP {
 
         no_irt_file = file('NO_IRT_FILE')
         unmatched_ch = dia_normalized
-            .join(joined_pqps_normalized, remainder: true)
+            .join(joined_pqps_best, remainder: true)
             .filter { it.size() == 2 || it[2] == null }
             .map { items -> 
                 def run_id = items[0]
