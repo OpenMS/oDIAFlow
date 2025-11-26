@@ -1,0 +1,49 @@
+name: fdrbench_entrapment
+description: Generate entrapment FASTA database for FDR control evaluation using FDRBench
+keywords:
+  - proteomics
+  - FDR
+  - entrapment
+  - database
+  - FDRBench
+tools:
+  - fdrbench:
+      description: |
+        FDRBench is a tool for false discovery rate (FDR) control evaluation in proteomics.
+        This module generates entrapment databases by either shuffling target sequences or
+        incorporating foreign species sequences.
+      homepage: https://github.com/Noble-Lab/FDRBench
+      documentation: https://github.com/Noble-Lab/FDRBench
+      doi: "10.1038/s41592-025-02664-1"
+      licence: ["Apache-2.0"]
+
+input:
+  - fasta:
+      type: file
+      description: Input FASTA file containing target protein sequences
+      pattern: "*.{fasta,fa,faa}"
+  - foreign_species_fastas:
+      type: file
+      description: |
+        Optional FASTA files from foreign species for multi-species entrapment.
+        Can be an empty list if using shuffled sequences method.
+      pattern: "*.{fasta,fa,faa}"
+
+output:
+  - entrapment_fasta:
+      type: file
+      description: FASTA file with entrapment sequences added
+      pattern: "*_entrapment_*.fasta"
+  - peptide_map:
+      type: file
+      description: |
+        Peptide pair mapping file (for peptide-level entrapment).
+        Maps target peptides to their entrapment counterparts.
+      pattern: "*_entrapment_*.txt"
+  - log:
+      type: file
+      description: Log file from FDRBench execution
+      pattern: "*.log"
+
+authors:
+  - "@singjc"

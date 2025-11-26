@@ -11,6 +11,8 @@
     - psmpkl : list of psmpkl files (from EASYPQP_CONVERTSAGE)
     - peakpkl : list of peakpkl files
     - sage_results : combined SAGE results TSV (joined results + matched fragments)
+    - entrapment_fasta : FASTA with entrapment sequences (if FDRBench enabled)
+    - peptide_map : peptide pair mapping file (if FDRBench enabled at peptide level)
 */
 
 include { SAGE_SEARCH as SAGE_SEARCH_DDA } from '../../../modules/local/sage/search/main.nf'
@@ -18,6 +20,7 @@ include { SAGE_SEARCH as SAGE_SEARCH_DIA } from '../../../modules/local/sage/sea
 include { SAGE_COMBINE_RESULTS } from '../../../modules/local/sage/combine_searches/main.nf'
 include { EASYPQP_CONVERTSAGE } from '../../../modules/local/easypqp/convertsage/main.nf'
 include { EASYPQP_LIBRARY } from '../../../modules/local/easypqp/library/main.nf'
+include { FDRBENCH_ENTRAPMENT } from '../../../modules/local/fdrbench/entrapment/main.nf'
 
 workflow SAGE_EASYPQP_LIBRARY {
 
@@ -35,10 +38,39 @@ workflow SAGE_EASYPQP_LIBRARY {
     // Check if we have DIA files for library building
     has_dia_for_lib = params.sage.search_dia_for_lib && params.dia_for_lib_glob ? true : false
 
+    // =========================================================================
+    // FDRBench Entrapment Database Generation (Optional)
+    // =========================================================================
+    // If FDRBench is enabled, generate entrapment FASTA before Sage search
+    if (params.fdrbench.enabled) {
+      // Handle foreign species FASTA files if provided
+      foreign_species_ch = params.fdrbench.foreign_species 
+        ? Channel.fromPath(params.fdrbench.foreign_species.split(',').collect { it.trim() })
+            .collect()
+        : Channel.value([])
+      
+      // Generate entrapment database
+      // fdrbench command is available in the OpenSWATH container
+      FDRBENCH_ENTRAPMENT(fasta_ch, foreign_species_ch)
+      
+      // Use the entrapment FASTA for Sage search
+      search_fasta_ch = FDRBENCH_ENTRAPMENT.out.entrapment_fasta
+      entrapment_fasta_out = FDRBENCH_ENTRAPMENT.out.entrapment_fasta
+      peptide_map_out = FDRBENCH_ENTRAPMENT.out.peptide_map
+    } else {
+      // Use original FASTA
+      search_fasta_ch = fasta_ch
+      entrapment_fasta_out = Channel.empty()
+      peptide_map_out = Channel.empty()
+    }
+
+    // =========================================================================
+    // Sage Search
+    // =========================================================================
     if (has_dda && has_dia_for_lib) {
       // Both DDA and DIA - run both searches and combine
-      dda_sage_results = SAGE_SEARCH_DDA(DDA_FOR_SEARCH, fasta_ch)
-      dia_sage_results = SAGE_SEARCH_DIA(DIA_FOR_SEARCH, fasta_ch)
+      dda_sage_results = SAGE_SEARCH_DDA(DDA_FOR_SEARCH, search_fasta_ch)
+      dia_sage_results = SAGE_SEARCH_DIA(DIA_FOR_SEARCH, search_fasta_ch)
 
       combined_input = dda_sage_results.results
         .map { sample_id, results_tsv, search_type -> tuple("combined", results_tsv) }
@@ -56,7 +88,7 @@ workflow SAGE_EASYPQP_LIBRARY {
       sage_combined = sage_combined_output.results.join(sage_combined_output.matched_fragments)
     } else if (has_dda) {
       // Only DDA files - run DDA search only
-      dda_sage_results = SAGE_SEARCH_DDA(DDA_FOR_SEARCH, fasta_ch)
+      dda_sage_results = SAGE_SEARCH_DDA(DDA_FOR_SEARCH, search_fasta_ch)
       sage_combined = dda_sage_results.results
         .map { sample_id, results_tsv, search_type -> tuple(sample_id, results_tsv) }
         .join(
@@ -64,7 +96,7 @@ workflow SAGE_EASYPQP_LIBRARY {
         )
     } else if (has_dia_for_lib) {
       // Only DIA files for library - run DIA search only
-      dia_sage_results = SAGE_SEARCH_DIA(DIA_FOR_SEARCH, fasta_ch)
+      dia_sage_results = SAGE_SEARCH_DIA(DIA_FOR_SEARCH, search_fasta_ch)
       sage_combined = dia_sage_results.results
         .map { sample_id, results_tsv, search_type -> tuple(sample_id, results_tsv) }
         .join(
@@ -88,4 +120,6 @@ workflow SAGE_EASYPQP_LIBRARY {
     psmpkl = EASYPQP_CONVERTSAGE.out.psmpkl
     peakpkl = EASYPQP_CONVERTSAGE.out.peakpkl
     sage_results = sage_combined
+    entrapment_fasta = entrapment_fasta_out
+    peptide_map = peptide_map_out
 }

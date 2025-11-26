@@ -93,6 +93,26 @@ nextflow run modules/tests/openswath_library_generation_test.nf \
 
 **Test data required:** `modules/tests/data/strep_iRT_small.TraML`
 
+### FDRBench Entrapment Module
+
+Test entrapment database generation for FDR control evaluation:
+
+```bash
+nextflow run modules/tests/fdrbench_entrapment_test.nf \
+  -c modules/tests/config/fdrbench_entrapment.config \
+  -profile docker
+```
+
+**Test workflow:** FASTA → FDRBench (generate shuffled entrapment sequences) → Entrapment FASTA
+
+**Test data required:**
+- `modules/tests/data/uniprotkb_organism_id_1314_AND_reviewed_2025_11_18.fasta` - Protein database
+
+**Outputs:**
+- Entrapment FASTA with shuffled sequences labeled `_p_target`
+- Peptide pair mapping file (for peptide-level entrapment)
+- Execution log
+
 ### OpenSwathWorkflow Module
 
 Test feature extraction from DIA data:
@@ -138,6 +158,12 @@ Test configs are located in `modules/tests/config/`:
 - **`openswath_library_generation.config`** - Config for library generation
   - Reduced min_transitions for small test library
   - Shuffle method for decoy generation
+  - 2 CPUs, 4GB RAM
+
+- **`fdrbench_entrapment.config`** - Config for FDRBench entrapment
+  - Protein-level entrapment with shuffled sequences
+  - DIA-NN compatible output format
+  - Fixed seed (42) for reproducible test results
   - 2 CPUs, 4GB RAM
   
 - **`openswathworkflow.config`** - Config for OpenSwathWorkflow

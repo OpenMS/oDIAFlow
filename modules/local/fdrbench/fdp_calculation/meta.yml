@@ -1,0 +1,54 @@
+name: fdrbench_fdp_calculation
+description: Calculate False Discovery Proportion (FDP) using entrapment sequences with FDRBench
+keywords:
+  - proteomics
+  - FDR
+  - FDP
+  - entrapment
+  - FDRBench
+  - quality control
+tools:
+  - fdrbench:
+      description: |
+        FDRBench is a tool for false discovery rate (FDR) control evaluation in proteomics.
+        This module calculates the False Discovery Proportion (FDP) using entrapment sequences
+        to validate FDR estimates from target-decoy approaches.
+      homepage: https://github.com/Noble-Lab/FDRBench
+      documentation: https://github.com/Noble-Lab/FDRBench
+      doi: "10.1038/s41592-025-02664-1"
+      licence: ["Apache-2.0"]
+
+input:
+  - psm_file:
+      type: file
+      description: |
+        PSM/peptide/precursor/protein identification file.
+        Should contain targets only (no decoys) with identification scores.
+      pattern: "*.{tsv,csv,txt}"
+  - peptide_map:
+      type: file
+      description: |
+        Peptide pair mapping file from FDRBENCH_ENTRAPMENT process.
+        Required for peptide/precursor/PSM level FDP calculation.
+        Maps target peptides to their entrapment counterparts.
+      pattern: "*_entrapment_*.txt"
+  - level:
+      type: string
+      description: |
+        Level of FDP calculation.
+        Options: 'PSM', 'peptide', 'precursor', or 'protein'
+
+output:
+  - fdp_results:
+      type: file
+      description: |
+        CSV file containing FDP calculation results.
+        Includes FDP estimates at various score thresholds.
+      pattern: "*_fdp_*.csv"
+  - log:
+      type: file
+      description: Log file from FDRBench FDP calculation
+      pattern: "*.log"
+
+authors:
+  - "@singjc"
