@@ -71,40 +71,64 @@ workflow OPEN_SWATH_E2E {
     // 1) Gather inputs
     // Collect all DDA files for a single Sage search (if provided)
     // Handle .d directories (Bruker TDF) or regular files (mzML, mzML.gz)
+    // Supports multiple comma-separated glob patterns for different file locations
     if (params.dda_glob) {
-        if (params.dda_glob.endsWith('.d')) {
-            Channel
-              .fromPath(params.dda_glob, type: 'dir', checkIfExists: true)
-              .collect()
-              .map { files -> tuple("all_dda", files, "dda") }
-              .set { DDA_FOR_SEARCH }
-        } else {
-            Channel
-              .fromPath(params.dda_glob, checkIfExists: true)
-              .collect()
-              .map { files -> tuple("all_dda", files, "dda") }
-              .set { DDA_FOR_SEARCH }
+        // Split by comma to support multiple glob patterns
+        def dda_globs = params.dda_glob.toString().split(',').collect { it.trim() }
+        
+        // Collect all files from all glob patterns
+        def all_dda_files = []
+        dda_globs.each { glob ->
+            def files = file(glob)
+            if (files instanceof List) {
+                all_dda_files.addAll(files)
+            } else if (files.exists()) {
+                all_dda_files.add(files)
+            } else {
+                log.warn "No files found for DDA glob pattern: ${glob}"
+            }
         }
+        
+        if (all_dda_files.isEmpty()) {
+            error "No DDA files found matching any of the patterns: ${dda_globs}"
+        }
+        
+        Channel.fromList(all_dda_files)
+            .collect()
+            .map { files -> tuple("all_dda", files, "dda") }
+            .set { DDA_FOR_SEARCH }
     } else {
         // No DDA files provided - create empty channel
         Channel.empty().set { DDA_FOR_SEARCH }
     }
 
     // Optional: Collect DIA files for library building with Sage
+    // Supports multiple comma-separated glob patterns for different file locations
     if (params.sage.search_dia_for_lib && params.dia_for_lib_glob) {
-        if (params.dia_for_lib_glob.endsWith('.d')) {
-            Channel
-              .fromPath(params.dia_for_lib_glob, type: 'dir', checkIfExists: true)
-              .collect()
-              .map { files -> tuple("all_dia_lib", files, "dia") }
-              .set { DIA_FOR_SEARCH }
-        } else {
-            Channel
-              .fromPath(params.dia_for_lib_glob, checkIfExists: true)
-              .collect()
-              .map { files -> tuple("all_dia_lib", files, "dia") }
-              .set { DIA_FOR_SEARCH }
+        // Split by comma to support multiple glob patterns
+        def dia_lib_globs = params.dia_for_lib_glob.toString().split(',').collect { it.trim() }
+        
+        // Collect all files from all glob patterns
+        def all_dia_lib_files = []
+        dia_lib_globs.each { glob ->
+            def files = file(glob)
+            if (files instanceof List) {
+                all_dia_lib_files.addAll(files)
+            } else if (files.exists()) {
+                all_dia_lib_files.add(files)
+            } else {
+                log.warn "No files found for DIA library glob pattern: ${glob}"
+            }
         }
+        
+        if (all_dia_lib_files.isEmpty()) {
+            error "No DIA library files found matching any of the patterns: ${dia_lib_globs}"
+        }
+        
+        Channel.fromList(all_dia_lib_files)
+            .collect()
+            .map { files -> tuple("all_dia_lib", files, "dia") }
+            .set { DIA_FOR_SEARCH }
     } else {
         // Create empty channel if not searching DIA
         Channel.empty().set { DIA_FOR_SEARCH }
