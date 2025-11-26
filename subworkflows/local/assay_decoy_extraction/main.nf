@@ -22,6 +22,35 @@ include { OPENSWATHDECOYGENERATOR } from '../../../modules/local/openms/openswat
 include { OPENSWATHWORKFLOW } from '../../../modules/local/openms/openswathworkflow/main.nf'
 include { EASYPQP_REDUCE } from '../../../modules/local/easypqp/reduce/main.nf'
 
+/**
+ * Helper function to normalize a run name by stripping pseudo-spectra suffixes.
+ * This allows matching run-specific iRTs from pseudo-spectra (e.g., from DIA-Umpire or diaTracer)
+ * to the original DIA files.
+ * 
+ * @param name The filename or run ID to normalize
+ * @return The normalized name with pseudo-spectra suffixes stripped
+ */
+def normalizeRunName(name) {
+    def normalized = name.toString()
+    
+    // If user specified a custom suffix pattern, use it
+    if (params.irt_pseudospectra_suffix) {
+        normalized = normalized.replaceAll(/${params.irt_pseudospectra_suffix}$/, '')
+    }
+    
+    // Always strip common pseudo-spectra suffixes as a fallback
+    // DIA-Umpire: _Q1, _Q2, _Q3 (quality tiers)
+    normalized = normalized.replaceAll(/_Q[123]$/, '')
+    
+    // diaTracer: _diatracer (case insensitive)
+    normalized = normalized.replaceAll(/(?i)_diatracer$/, '')
+    
+    // Additional common patterns can be added here
+    // normalized = normalized.replaceAll(/_pseudospectra$/, '')
+    
+    return normalized
+}
+
 workflow ASSAY_DECOY_FROM_TRANSITION {
 
   take:
@@ -83,14 +112,24 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
         // Join full PQP and reduced PQP by run_id
         // Result: tuple(run_id, full_pqp, linear_pqp)
         joined_pqps = per_run_pqps.join(per_run_linear)
+        
+        // Normalize the joined_pqps run_ids to handle pseudo-spectra suffixes
+        // This allows matching run-specific iRTs from pseudo-spectra (DIA-Umpire, diaTracer)
+        // to the original DIA files
+        // Result: tuple(normalized_run_id, original_run_id, full_pqp, linear_pqp)
+        joined_pqps_normalized = joined_pqps.map { run_id, full_pqp, linear_pqp ->
+            def normalized_id = normalizeRunName(run_id)
+            return tuple(normalized_id, run_id, full_pqp, linear_pqp)
+        }
 
-        // Join DIA files with their matching per-run PQPs
+        // Join DIA files with their matching per-run PQPs using normalized names
         // Using inner join - only matched files will proceed with per-run iRTs
-        // Result: tuple(run_id, dia_file, full_pqp, linear_pqp)
-        matched_ch = dia_normalized.join(joined_pqps)
+        // Result: tuple(normalized_run_id, dia_file, original_run_id, full_pqp, linear_pqp)
+        matched_ch = dia_normalized.join(joined_pqps_normalized)
 
         // Extract the matched DIA files and their per-run iRTs
-        matched_dia = matched_ch.map { run_id, dia, full_pqp, linear_pqp -> 
+        // Note: tuple structure after join is (normalized_id, dia, original_id, full_pqp, linear_pqp)
+        matched_dia = matched_ch.map { normalized_id, dia, original_id, full_pqp, linear_pqp -> 
             tuple(dia, linear_pqp, full_pqp, false)  // (dia_file, linear_irt, full_irt, use_auto_irt)
         }
 
@@ -98,7 +137,7 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
         // These will use auto_irt as fallback
         // Use empty list [] instead of placeholder file to avoid name collisions
         unmatched_ch = dia_normalized
-            .join(joined_pqps, remainder: true)
+            .join(joined_pqps_normalized, remainder: true)
             .filter { it.size() == 2 || it[2] == null }  // Only items without PQP match
             .map { items -> 
                 def run_id = items[0]
@@ -184,15 +223,26 @@ workflow ASSAY_DECOY_FROM_PQP {
         per_run_linear = EASYPQP_REDUCE.out.reduced_pqp
 
         joined_pqps = per_run_pqps.join(per_run_linear)
-        matched_ch = dia_normalized.join(joined_pqps)
+        
+        // Normalize the joined_pqps run_ids to handle pseudo-spectra suffixes
+        // This allows matching run-specific iRTs from pseudo-spectra (DIA-Umpire, diaTracer)
+        // to the original DIA files
+        // Result: tuple(normalized_run_id, original_run_id, full_pqp, linear_pqp)
+        joined_pqps_normalized = joined_pqps.map { run_id, full_pqp, linear_pqp ->
+            def normalized_id = normalizeRunName(run_id)
+            return tuple(normalized_id, run_id, full_pqp, linear_pqp)
+        }
+        
+        matched_ch = dia_normalized.join(joined_pqps_normalized)
 
-        matched_dia = matched_ch.map { run_id, dia, full_pqp, linear_pqp -> 
+        // Note: tuple structure after join is (normalized_id, dia, original_id, full_pqp, linear_pqp)
+        matched_dia = matched_ch.map { normalized_id, dia, original_id, full_pqp, linear_pqp -> 
             tuple(dia, linear_pqp, full_pqp, false)
         }
 
         no_irt_file = file('NO_IRT_FILE')
         unmatched_ch = dia_normalized
-            .join(joined_pqps, remainder: true)
+            .join(joined_pqps_normalized, remainder: true)
             .filter { it.size() == 2 || it[2] == null }
             .map { items -> 
                 def run_id = items[0]
