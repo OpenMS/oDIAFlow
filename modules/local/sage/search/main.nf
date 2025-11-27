@@ -97,9 +97,21 @@ process SAGE_SEARCH {
   }
 EOF
 
-  # Run Sage
+  # Run Sage with proper exit code capture
   export RAYON_NUM_THREADS=${task.cpus}
-  export SAGE_LOG_LEVEL=${params.sage.log_level}
+  export SAGE_LOG=${params.sage.log_level}
+  
+  # Log system resources for debugging
+  echo "=== SAGE SEARCH DEBUG INFO ===" >> sage_search_${search_type}.log
+  echo "Allocated CPUs: ${task.cpus}" >> sage_search_${search_type}.log
+  echo "Allocated Memory: ${task.memory}" >> sage_search_${search_type}.log
+  echo "Number of input files: \$(echo ${mzml_files} | wc -w)" >> sage_search_${search_type}.log
+  echo "Available system memory: \$(free -h | grep Mem | awk '{print \$2}')" >> sage_search_${search_type}.log
+  echo "===============================" >> sage_search_${search_type}.log
+  
+  # Use pipefail to capture actual sage exit code, not tee's
+  set -o pipefail
+  
   sage \\
     sage_config.json \\
     --fasta ${fasta} \\
@@ -109,7 +121,28 @@ EOF
     ${parquet} \\
     ${write_report} \\
     ${mzml_files} \\
-  2>&1 | tee sage_search_${search_type}.log
+  2>&1 | tee -a sage_search_${search_type}.log
+  
+  SAGE_EXIT_CODE=\$?
+  
+  # Check if Sage completed successfully
+  if [ \$SAGE_EXIT_CODE -ne 0 ]; then
+    echo "ERROR: Sage exited with code \$SAGE_EXIT_CODE" >> sage_search_${search_type}.log
+    echo "This may indicate:" >> sage_search_${search_type}.log
+    echo "  - Out of memory (OOM) if exit code is 137 or 9" >> sage_search_${search_type}.log
+    echo "  - Segmentation fault if exit code is 139 or 11" >> sage_search_${search_type}.log
+    echo "  - Other crash - check dmesg for details" >> sage_search_${search_type}.log
+    exit \$SAGE_EXIT_CODE
+  fi
+  
+  # Verify output was created
+  if [ ! -f results.sage.tsv ]; then
+    echo "ERROR: Sage completed but no results.sage.tsv was created!" >> sage_search_${search_type}.log
+    echo "This typically indicates Sage crashed silently (OOM or segfault)" >> sage_search_${search_type}.log
+    echo "Check system logs: dmesg | grep -i 'killed process'" >> sage_search_${search_type}.log
+    exit 1
+  fi
+  
   # Rename outputs to include sample_id and search_type to avoid filename collisions
   if [ -f results.sage.tsv ]; then
     mv results.sage.tsv ${sample_id}_${search_type}_results.sage.tsv
