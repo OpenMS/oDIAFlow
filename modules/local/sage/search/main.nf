@@ -9,7 +9,18 @@ process SAGE_SEARCH {
 
   publishDir "${params.outdir}/sage/${search_type}", mode: params.publish_dir_mode, enabled: params.save_reports, pattern: "*.html", saveAs: { filename -> "${search_type}_${filename}" }
   publishDir "${params.outdir}/logs/sage", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
+  // Ensure sage search log (e.g. ${sample_id}_${search_type}_sage_search.log) is published with other logs
+  publishDir "${params.outdir}/logs/sage", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*sage_search_*.log", saveAs: { filename -> "${filename}" }
+
+  // Optionally publish intermediate Sage TSV outputs (results and matched fragments)
+  publishDir "${params.outdir}/sage/${search_type}", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "*_results.sage.tsv"
+  publishDir "${params.outdir}/sage/${search_type}", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "*_matched_fragments.sage.tsv"
+
+  // Also keep a general TSV publish (backwards compatible) if save_intermediates is enabled
   publishDir "${params.outdir}/sage/${search_type}", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "*.sage.tsv"
+
+  // If Sage was run with write_report enabled, publish the per-sample Sage HTML report alongside other reports
+  publishDir "${params.outdir}/sage/${search_type}", mode: params.publish_dir_mode, enabled: (params.sage.write_report && params.save_reports), pattern: "*.sage.report.html", saveAs: { filename -> "${search_type}_${filename}" }
 
   input:
   tuple val(sample_id), path(mzml_files), val(search_type)  // search_type: 'dda' or 'dia'
@@ -19,6 +30,8 @@ process SAGE_SEARCH {
   tuple val(sample_id), path("${sample_id}_${search_type}_results.sage.tsv"), val(search_type), emit: results
   tuple val(sample_id), path("${sample_id}_${search_type}_results.sage.parquet"), val(search_type), emit: results_parquet, optional: true
   tuple val(sample_id), path("${sample_id}_${search_type}_matched_fragments.sage.tsv"), val(search_type), emit: matched_fragments, optional: true
+  // Emit per-sample Sage HTML report when produced by the tool (e.g. sample_search_type.sage.report.html)
+  path "${sample_id}_${search_type}_*.sage.report.html", emit: sage_report, optional: true
   path "${sample_id}_${search_type}_*.pin", emit: pin, optional: true
   path "${sample_id}_${search_type}_*.html", emit: report, optional: true
   path "${sample_id}_${search_type}_*.log", emit: log
@@ -142,6 +155,11 @@ EOF
     echo "Check system logs: dmesg | grep -i 'killed process'" >> sage_search_${search_type}.log
     exit 1
   fi
+
+  # Append a listing of the working directory to the sage log for debugging what was produced
+  echo "=== WORKDIR FILES BEFORE RENAMING ===" >> sage_search_${search_type}.log
+  ls -lah >> sage_search_${search_type}.log 2>&1 || true
+
   
   # Rename outputs to include sample_id and search_type to avoid filename collisions
   if [ -f results.sage.tsv ]; then
@@ -161,6 +179,12 @@ EOF
   fi
   if [ -f sage_search_${search_type}.log ]; then
     mv sage_search_${search_type}.log ${sample_id}_${search_type}_sage_search.log
+  fi
+
+  # Also append a post-rename directory listing to the per-sample log for traceability
+  if [ -f ${sample_id}_${search_type}_sage_search.log ]; then
+    echo "=== WORKDIR FILES AFTER RENAMING ===" >> ${sample_id}_${search_type}_sage_search.log
+    ls -lah >> ${sample_id}_${search_type}_sage_search.log 2>&1 || true
   fi
   """
 }
