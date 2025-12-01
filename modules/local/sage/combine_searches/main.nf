@@ -6,9 +6,6 @@ process SAGE_COMBINE_RESULTS {
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
         'ghcr.io/openswath/openswath:dev' }"
 
-  publishDir "${params.outdir}/sage", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "combined_*.sage.tsv"
-  publishDir "${params.outdir}/logs/sage", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
-
   input:
   tuple val(sample_id), path(dda_results), path(dia_results), path(dda_fragments), path(dia_fragments)
 

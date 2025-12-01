@@ -7,10 +7,6 @@ process ARYCAL {
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
         'ghcr.io/openswath/openswath:dev' }"
 
-  publishDir "${params.outdir}/pyprophet", mode: params.publish_dir_mode, enabled: params.save_merged_osw, pattern: "*.osw"
-  publishDir "${params.outdir}/pyprophet", mode: params.publish_dir_mode, enabled: params.save_merged_osw, pattern: "*.oswpqd"
-  publishDir "${params.outdir}/logs/arycal", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
-
   input:
   path xic_files        // sqMass or parquet files containing XIC data
   path feature_files    // merged osw or pyprophet split parquet oswpqd directory

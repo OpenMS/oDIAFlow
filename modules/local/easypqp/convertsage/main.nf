@@ -13,6 +13,9 @@ process EASYPQP_CONVERTSAGE {
   output:
   tuple val(sample_id), path("*.psmpkl", includeInputs: false, hidden: false), emit: psmpkl
   tuple val(sample_id), path("*.peakpkl", includeInputs: false, hidden: false), emit: peakpkl
+  path "*.psmpkl", emit: psmpkl_pub
+  path "*.peakpkl", emit: peakpkl_pub
+  tuple val(sample_id), path("*.log"), emit: log, optional: true
 
   script:
   def args = task.ext.args ?: ''

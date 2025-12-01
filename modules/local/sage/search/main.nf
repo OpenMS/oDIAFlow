@@ -7,21 +7,6 @@ process SAGE_SEARCH {
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
         'ghcr.io/openswath/openswath:dev' }" // Temp use dev image which contains OpenMS develop branch for latests changes to the OpenSwathWorkflow
 
-  publishDir "${params.outdir}/sage/${search_type}", mode: params.publish_dir_mode, enabled: params.save_reports, pattern: "*.html", saveAs: { filename -> "${search_type}_${filename}" }
-  publishDir "${params.outdir}/logs/sage", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
-  // Ensure sage search log (e.g. ${sample_id}_${search_type}_sage_search.log) is published with other logs
-  publishDir "${params.outdir}/logs/sage", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*sage_search_*.log", saveAs: { filename -> "${filename}" }
-
-  // Optionally publish intermediate Sage TSV outputs (results and matched fragments)
-  publishDir "${params.outdir}/sage/${search_type}", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "*_results.sage.tsv"
-  publishDir "${params.outdir}/sage/${search_type}", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "*_matched_fragments.sage.tsv"
-
-  // Also keep a general TSV publish (backwards compatible) if save_intermediates is enabled
-  publishDir "${params.outdir}/sage/${search_type}", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "*.sage.tsv"
-
-  // If Sage was run with write_report enabled, publish the per-sample Sage HTML report alongside other reports
-  publishDir "${params.outdir}/sage/${search_type}", mode: params.publish_dir_mode, enabled: (params.sage.write_report && params.save_reports), pattern: "*.sage.report.html", saveAs: { filename -> "${search_type}_${filename}" }
-
   input:
   tuple val(sample_id), path(mzml_files), val(search_type)  // search_type: 'dda' or 'dia'
   path fasta

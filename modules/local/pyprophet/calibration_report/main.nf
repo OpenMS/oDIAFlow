@@ -7,14 +7,13 @@ process PYPROPHET_CALIBRATION_REPORT {
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
         'ghcr.io/openswath/openswath:dev' }"
 
-  publishDir "${params.outdir}/reports", mode: params.publish_dir_mode, enabled: params.save_calibration, pattern: "*.pdf"
-  publishDir "${params.outdir}/logs/pyprophet", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
-
   input:
   path debug_files  // All debug calibration files from OpenSwathWorkflow
 
   output:
   path "calibration_report.pdf", emit: report
+  // Emit the raw calibration/debug files so publishDir can reliably copy them
+  path "calibration_data/*", emit: calibration_debug, optional: true
   path "*.log", emit: log
 
   script:

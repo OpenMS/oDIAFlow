@@ -7,9 +7,6 @@ process EASYPQP_LIBRARY {
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
         'ghcr.io/openswath/openswath:dev' }" // Temp use dev image which contains OpenMS develop branch for latests changes to the OpenSwathWorkflow
 
-  publishDir "${params.outdir}/logs/easypqp", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
-  publishDir "${params.outdir}/library", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "*.tsv"
-
   input:
   path psmpkls  // Multiple .psmpkl files
   path peakpkls // Multiple .peakpkl files

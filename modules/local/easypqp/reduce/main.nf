@@ -7,14 +7,13 @@ process EASYPQP_REDUCE {
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
         'ghcr.io/openswath/openswath:dev' }"
 
-  publishDir "${params.outdir}/library/run_specific", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "*.pqp"
-  publishDir "${params.outdir}/logs/easypqp", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
-
   input:
   tuple val(run_id), path(pqp)
 
   output:
-  tuple val(run_id), path("${run_id}.irt.linear.pqp"), emit: reduced_pqp
+  // tuple val(run_id), path("${run_id}.irt.linear.pqp"), emit: reduced_pqp
+  path "*.irt.linear.pqp", emit: reduced_pqp
+  path "*.log", emit: log
 
   script:
   def out_file = "${run_id}.irt.linear.pqp"

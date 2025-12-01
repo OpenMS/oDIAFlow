@@ -7,9 +7,6 @@ process OPENSWATHASSAYGENERATOR {
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
         'ghcr.io/openswath/openswath:dev' }" // Temp use dev image which contains OpenMS develop branch for latests changes to the OpenSwathWorkflow
 
-  publishDir "${params.outdir}/library", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "library_targets.${params.osag.out_type}"
-  publishDir "${params.outdir}/logs/openms", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
-
   input:
   path transition_list
 
@@ -31,7 +28,5 @@ process OPENSWATHASSAYGENERATOR {
     -debug ${params.osag.debug} \\
     ${args} \\
   2>&1 | tee openswathassaygenerator.log
-  """
-}
   """
 }

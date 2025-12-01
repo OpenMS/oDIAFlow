@@ -7,9 +7,6 @@ process PYPROPHET_MERGE {
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
         'ghcr.io/openswath/openswath:dev' }"
 
-  publishDir "${params.outdir}/pyprophet", mode: params.publish_dir_mode, enabled: params.save_merged_osw, pattern: "merged.osw"
-  publishDir "${params.outdir}/logs/pyprophet", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
-
   input:
   path osw_files  // Multiple .osw files from OPENSWATH_EXTRACT
   path pqp        // Spectral library

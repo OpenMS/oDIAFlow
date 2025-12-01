@@ -34,4 +34,11 @@ process PYPROPHET_TRANSITION_SCORING {
     ${args} \
     2>&1 | tee pyprophet_transition_scoring.log
   """
+
+  // Publish transition scoring log for debugging
+  publishDir "${params.outdir}", mode: params.publish_dir_mode, enabled: true, saveAs: { file ->
+    def name = file.getName()
+    if( name.endsWith('.log') ) return "logs/pyprophet/${name}"
+    return name
+  }
 }
