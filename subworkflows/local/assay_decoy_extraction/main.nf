@@ -64,7 +64,7 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
   main:
     // Generate PQP/library from transition TSV
     OPENSWATHASSAYGENERATOR(transition_tsv)
-    pqp_library_ch = OPENSWATHASSAYGENERATOR.out.library
+    pqp_library_ch = OPENSWATHASSAYGENERATOR.out.library_targets
 
     // Create decoy library
     OPENSWATHDECOYGENERATOR(pqp_library_ch)

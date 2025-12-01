@@ -11,7 +11,7 @@ process OPENSWATHASSAYGENERATOR {
   path transition_list
 
   output:
-  path "library_targets.${params.osag.out_type}", emit: library
+  path "library_targets.${params.osag.out_type}", emit: library_targets
   path "*.log", emit: log
 
   script:

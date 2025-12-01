@@ -16,7 +16,7 @@ input:
       description: Input transition list file containing the peptide transitions to include in the assay library.
       pattern: "*.tsv"
 output:
-  - library:
+  - library_targets:
       type: file
       description: PQP (PeptideQueryParameter) assay/library file produced by OpenSwathAssayGenerator.
       pattern: "library_targets.*"

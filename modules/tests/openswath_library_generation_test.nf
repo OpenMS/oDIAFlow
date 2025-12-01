@@ -14,9 +14,9 @@ workflow {
     OPENSWATHASSAYGENERATOR(traml_ch)
 
     // Run OpenSwathDecoyGenerator to add decoys
-    OPENSWATHDECOYGENERATOR(OPENSWATHASSAYGENERATOR.out.library)
+    OPENSWATHDECOYGENERATOR(OPENSWATHASSAYGENERATOR.out.library_targets)
 
     // Emit results for inspection
-    OPENSWATHASSAYGENERATOR.out.library.view { "Target library: $it" }
+    OPENSWATHASSAYGENERATOR.out.library_targets.view { "Target library: $it" }
     OPENSWATHDECOYGENERATOR.out.library.view { "Target + Decoy library: $it" }
 }
