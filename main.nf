@@ -1,5 +1,33 @@
 nextflow.enable.dsl=2
 
+// Small startup banner printing effective publishing-related params
+def _startupBanner() {
+        def bannerLines = [
+            '===================================================',
+            '        _____  _____          ______ _               ',
+            '       |  __ \\|_   _|   /\\   |  ____| |              ',
+            '   ___ | |  | | | |    /  \\  | |__  | | _____      __',
+            '  / _ \\| |  | | | |   / /\\ \\ |  __| | |/ _ \\ \\ /\\ / /',
+            ' | (_) | |__| |_| |_ / ____ \\| |    | | (_) \\ V  V / ',
+            '  \\___/|_____/|_____/_/    \\_\\_|    |_|\\___/ \\_/\\_/  ',
+            '',
+            'An Open DIA Nextflow Pipeline',
+            '=================================================='
+        ]
+        bannerLines.each { log.info it }
+        // Print a compact set of params that affect publishing/output
+        log.info "params.outdir           = ${params.outdir}"
+        log.info "params.publish_dir_mode = ${params.publish_dir_mode}"
+        log.info "params.save_intermediates = ${params.save_intermediates}"
+        log.info "params.save_reports     = ${params.save_reports}"
+        log.info "params.save_logs        = ${params.save_logs}"
+        log.info "params.save_sqmass      = ${params.save_sqmass}"
+        log.info "workflow selected      = ${params.workflow ?: 'default (empirical)'}"
+        log.info "Working directory      = ${workflow.workDir}"
+}
+
+_startupBanner()
+
 include { OPEN_SWATH_E2E } from './workflows/dia_empirical_library.nf'
 include { OPEN_SWATH_INSILICO_LIBRARY } from './workflows/dia_insilico_library.nf'
 
