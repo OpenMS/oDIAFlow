@@ -109,7 +109,9 @@ workflow OPEN_SWATH_E2E {
         
         log.info "Found ${all_dda_files.size()} DDA files/directories for Sage search"
         
-        Channel.fromList(all_dda_files)
+        // Ensure we always pass a List to Channel.fromList (file() may return a single Path)
+        def dda_list = (all_dda_files instanceof List) ? all_dda_files : [all_dda_files]
+        Channel.fromList(dda_list)
             .collect()
             .map { files -> tuple("all_dda", files, "dda") }
             .set { DDA_FOR_SEARCH }
@@ -156,7 +158,9 @@ workflow OPEN_SWATH_E2E {
         
         log.info "Found ${all_dia_lib_files.size()} DIA library files/directories for Sage search"
         
-        Channel.fromList(all_dia_lib_files)
+        // Ensure we always pass a List to Channel.fromList
+        def dia_lib_list = (all_dia_lib_files instanceof List) ? all_dia_lib_files : [all_dia_lib_files]
+        Channel.fromList(dia_lib_list)
             .collect()
             .map { files -> tuple("all_dia_lib", files, "dia") }
             .set { DIA_FOR_SEARCH }
@@ -178,8 +182,11 @@ workflow OPEN_SWATH_E2E {
           }
           .set { DIA_MZML }
     } else {
+        // file() can return a single Path or a List -- normalize to List
+        def dia_files_raw = file(params.dia_glob)
+        def dia_list = (dia_files_raw instanceof List) ? dia_files_raw : [dia_files_raw]
         Channel
-            .fromList(file(params.dia_glob))
+            .fromList(dia_list)
             .map { path -> 
                 def base = path.baseName.toString()
                 // Strip common MS file extensions that might remain after baseName
