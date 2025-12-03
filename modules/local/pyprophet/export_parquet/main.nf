@@ -7,18 +7,6 @@ process PYPROPHET_EXPORT_PARQUET {
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
         'ghcr.io/openswath/openswath:dev' }"
 
-  // Route exported parquet directories and logs deterministically
-  publishDir "${params.outdir}", mode: params.publish_dir_mode, enabled: params.save_intermediates, saveAs: { file ->
-    def name = file.getName()
-    if( name.endsWith('.oswpq') ) return "pyprophet/${name}"
-    return name
-  }
-  publishDir "${params.outdir}", mode: params.publish_dir_mode, enabled: params.save_logs, saveAs: { file ->
-    def name = file.getName()
-    if( name.endsWith('.log') ) return "logs/pyprophet/${name}"
-    return name
-  }
-
   input:
   tuple val(sample_id), path(sqlite_osw)
 
