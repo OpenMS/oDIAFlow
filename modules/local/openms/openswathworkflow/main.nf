@@ -22,7 +22,7 @@ process OPENSWATHWORKFLOW {
   path "${dia_mzml.baseName}_debug_calibration_irt_chrom.mzML", emit: irt_chrom, optional: true
   path "${dia_mzml.baseName}_debug_calibration_mz.txt", emit: debug_mz, optional: true
   path "${dia_mzml.baseName}_debug_calibration_im.txt", emit: debug_im, optional: true
-  path "*.log", emit: log
+  path "${dia_mzml.baseName}_openswath.log", emit: log
 
   script:
   def args = task.ext.args ?: ''
