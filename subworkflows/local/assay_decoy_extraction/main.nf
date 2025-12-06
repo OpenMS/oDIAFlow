@@ -171,7 +171,8 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
             .map { items -> 
                 def run_id = items[0]
                 def dia = items[1]
-                tuple(dia, [], [], params.use_auto_irts ?: true)
+                // Respect explicit false for params.use_auto_irts: use explicit null-check
+                tuple(dia, [], [], (params.use_auto_irts != null) ? params.use_auto_irts : true)
             }
 
         // Combine matched and unmatched into input channels for OPENSWATHWORKFLOW
@@ -305,7 +306,8 @@ workflow ASSAY_DECOY_FROM_PQP {
             .map { items -> 
                 def run_id = items[0]
                 def dia = items[1]
-                tuple(dia, no_irt_file, no_irt_file, params.use_auto_irts ?: true)
+                // Respect explicit false for params.use_auto_irts: use explicit null-check
+                tuple(dia, no_irt_file, no_irt_file, (params.use_auto_irts != null) ? params.use_auto_irts : true)
             }
 
         all_inputs = matched_dia.mix(unmatched_ch)
