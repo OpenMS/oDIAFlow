@@ -180,12 +180,14 @@ workflow ASSAY_DECOY_FROM_TRANSITION {
 
         // Debug: print mapping of DIA -> (linear_irt, full_irt, auto_irt) so we can see which runs
         // received per-run PQPs and which fell back to auto_irt. This will appear in the workflow stdout/log.
-        all_inputs.map { dia, lin, full, auto ->
-            def dn = dia instanceof File ? dia.baseName : dia.toString()
-            def lin_name = (lin && !(lin instanceof List) && lin.name) ? lin.name : (lin instanceof List ? '[]' : lin.toString())
-            def full_name = (full && !(full instanceof List) && full.name) ? full.name : (full instanceof List ? '[]' : full.toString())
-            return "RUN_MAP: ${dn} -> linear=${lin_name} full=${full_name} auto=${auto}"
-        }.view()
+        if (log.isDebugEnabled()) {
+            all_inputs.map { dia, lin, full, auto ->
+                def dn = dia instanceof File ? dia.baseName : dia.toString()
+                def lin_name = (lin && !(lin instanceof List) && lin.name) ? lin.name : (lin instanceof List ? '[]' : lin.toString())
+                def full_name = (full && !(full instanceof List) && full.name) ? full.name : (full instanceof List ? '[]' : full.toString())
+                return "RUN_MAP: ${dn} -> linear=${lin_name} full=${full_name} auto=${auto}"
+            }.view()
+        }
         
         dia_files_ch = all_inputs.map { dia, lin, full, auto -> dia }
         linear_irt_ch = all_inputs.map { dia, lin, full, auto -> lin }
@@ -322,12 +324,16 @@ workflow ASSAY_DECOY_FROM_PQP {
         all_inputs = matched_dia.mix(unmatched_ch)
 
         // Debug: print mapping of DIA -> (linear_irt, full_irt, auto_irt) for runs when using provided PQP library input
-        all_inputs.map { dia, lin, full, auto ->
-            def dn = dia instanceof File ? dia.baseName : dia.toString()
-            def lin_name = (lin && !(lin instanceof List) && lin.name) ? lin.name : (lin instanceof List ? '[]' : lin.toString())
-            def full_name = (full && !(full instanceof List) && full.name) ? full.name : (full instanceof List ? '[]' : full.toString())
-            return "RUN_MAP: ${dn} -> linear=${lin_name} full=${full_name} auto=${auto}"
-        }.view()
+        // Only print the debug mapping when Nextflow debug logging is enabled.
+        // Use the logger's debug flag so this is quiet during normal runs.
+        if (log.isDebugEnabled()) {
+            all_inputs.map { dia, lin, full, auto ->
+                def dn = dia instanceof File ? dia.baseName : dia.toString()
+                def lin_name = (lin && !(lin instanceof List) && lin.name) ? lin.name : (lin instanceof List ? '[]' : lin.toString())
+                def full_name = (full && !(full instanceof List) && full.name) ? full.name : (full instanceof List ? '[]' : full.toString())
+                return "RUN_MAP: ${dn} -> linear=${lin_name} full=${full_name} auto=${auto}"
+            }.view()
+        }
         
         dia_files_ch = all_inputs.map { dia, lin, full, auto -> dia }
         linear_irt_ch = all_inputs.map { dia, lin, full, auto -> lin }
