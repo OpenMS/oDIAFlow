@@ -44,17 +44,33 @@ workflow MERGE_ALIGN_SCORE {
     }
 
     // XIC alignment for across-run feature linking
-    ARYCAL(xic_files, merged_features)
+    // Allow skipping Arycal via params.tools.arycal (defaults to true)
+    def arycal_enabled = (params.tools?.get('arycal') != null) ? params.tools.arycal : true
 
-    // Score aligned features
-    PYPROPHET_ALIGNMENT_SCORING(ARYCAL.out.aligned_features)
+    if (arycal_enabled) {
+      ARYCAL(xic_files, merged_features)
+
+      // Score aligned features produced by ARYCAL
+      PYPROPHET_ALIGNMENT_SCORING(ARYCAL.out.aligned_features)
+
+      // Use the scored output from alignment scoring
+      alignment_scored = PYPROPHET_ALIGNMENT_SCORING.out.scored
+    } else {
+      log.info "Skipping Arycal alignment (params.tools.arycal=false). Running final PyProphet scoring on merged features directly."
+
+      // If Arycal is disabled, skip alignment scoring entirely and use the
+      // merged features as the input to final PyProphet scoring. This avoids
+      // running alignment scoring when it's not desired and keeps downstream
+      // behavior consistent.
+      alignment_scored = merged_features
+    }
 
     // Final PyProphet scoring (parquet or osw flow)
     if (params.use_parquet) {
-      pyprophet_final = PYPROPHET_PARQUET_FULL(PYPROPHET_ALIGNMENT_SCORING.out.scored, decoyed_library)
+      pyprophet_final = PYPROPHET_PARQUET_FULL(alignment_scored, decoyed_library)
       final_tsv = pyprophet_final.results_tsv
     } else {
-      pyprophet_final = PYPROPHET_OSW_FULL(PYPROPHET_ALIGNMENT_SCORING.out.scored, decoyed_library)
+      pyprophet_final = PYPROPHET_OSW_FULL(alignment_scored, decoyed_library)
       final_tsv = pyprophet_final.results_tsv
     }
 
