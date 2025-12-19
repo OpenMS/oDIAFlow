@@ -7,9 +7,6 @@ process FDRBENCH_FDP_CALCULATION {
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
         'ghcr.io/openswath/openswath:dev' }"
 
-  publishDir "${params.outdir}/fdrbench/fdp", mode: params.publish_dir_mode, enabled: true, pattern: "*.csv"
-  publishDir "${params.outdir}/logs/fdrbench", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
-
   input:
   path psm_file           // PSM/peptide/precursor/protein file (targets only, no decoys)
   path peptide_map        // Peptide pair file from FDRBENCH_ENTRAPMENT (for peptide/precursor level)

@@ -7,10 +7,6 @@ process FDRBENCH_ENTRAPMENT {
         'oras://ghcr.io/openswath/openswath-sif:v0.3.1' :
         'ghcr.io/openswath/openswath:dev' }"
 
-  publishDir "${params.outdir}/fdrbench", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "*.fasta"
-  publishDir "${params.outdir}/fdrbench", mode: params.publish_dir_mode, enabled: params.save_intermediates, pattern: "*.txt"
-  publishDir "${params.outdir}/logs/fdrbench", mode: params.publish_dir_mode, enabled: params.save_logs, pattern: "*.log"
-
   input:
   path fasta
   path foreign_species_fastas  // Optional: for multi-species entrapment (can be empty list)
