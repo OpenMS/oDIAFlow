@@ -97,6 +97,27 @@ nextflow run main.nf \
   --outdir results
 ```
 
+## Execution Environments
+
+### Local Execution
+
+```bash
+nextflow run main.nf -profile docker,local [options]
+```
+
+### HPC Clusters (SLURM)
+
+**Generic SLURM cluster:**
+```bash
+nextflow run main.nf -profile singularity,slurm [options]
+```
+
+**Trillium (DigitalAlliance):**
+```bash
+export SLURM_ACCOUNT=your-account
+nextflow run main.nf -profile singularity,slurm,trillium [options]
+```
+
 ## Parameters
 
 ### Required Parameters
@@ -117,6 +138,7 @@ nextflow run main.nf \
 - `--swath_windows`: Path to SWATH window definition file
 - `--use_parquet`: Use Parquet format for PyProphet (default: false)
 - `--outdir`: Output directory (default: "results")
+- `--tools.arycal`: Enable/disable Arycal alignment (default: true)
 
 ## Tools Integrated
 
